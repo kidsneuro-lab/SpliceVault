@@ -1,0 +1,124 @@
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-09GZE94QE8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-09GZE94QE8');
+  
+  
+  $(document).on('click', '#confirm', function() {
+    gtag('event', 'click', {
+      'event_category': 'retrieve',
+      'event_label' : 'retrieve table'
+      });
+  });
+  
+  $(document).one('change', '#eventsNoInput', function(e) {
+    gtag('event', 'change', {
+          'event_category': 'settings',
+          'event_label' : 'modify event count setting'
+    });
+  });
+  
+  $(document).one('change', '#esInput', function() {
+    gtag('event', 'change', {
+        'event_category': 'settings',
+        'event_label' : 'modify skipping setting'
+      });
+  });
+
+  $(document).one('change', '#cssInput', function() {
+    gtag('event', 'change', {
+        'event_category': 'settings',
+        'event_label' : 'modify cryptic setting'
+      });
+  });
+  
+  $(document).on('click', '#allevents', function() {
+    gtag('event', 'click', {
+      'event_category': 'settings',
+      'event_label' : 'show all events'
+      });
+  });
+
+  
+  $(document).on('click', '#allskips', function() {
+    gtag('event', 'click', {
+      'event_category': 'settings',
+      'event_label' : 'show all skipping'
+      });
+  });
+  
+  $(document).on('click', '#allcryptics', function() {
+    gtag('event', 'click', {
+      'event_category': 'settings',
+      'event_label' : 'show all cryptics'
+      });
+  });
+    
+  $(document).on('click', '#restore', function() {
+    gtag('event', 'click', {
+      'event_category': 'settings',
+      'event_label' : 'restore settings'
+      });
+  });
+  
+  
+  $(document).on('change', "input[name='dbInput']", function() {
+    gtag('event', 'click', {
+      'event_category': 'splicesite',
+      'event_label' : 'change db'
+      });
+  });
+  
+  $(document).on('change', "#geneInput", function() {
+    gtag('event', 'change', {
+      'event_category': 'splicesite',
+      'event_label' : 'change gene'
+      });
+  });
+  
+  $(document).on('change', "#txInput", function() {
+    gtag('event', 'change', {
+      'event_category': 'splicesite',
+      'event_label' : 'change tx'
+      });
+  });
+  
+  $(document).on('change', "input[name='txTypeInput']", function() {
+    gtag('event', 'change', {
+      'event_category': 'splicesite',
+      'event_label' : 'change tx type'
+      });
+  });
+  
+  $(document).on('change', "#exonInput", function() {
+    gtag('event', 'change', {
+      'event_category': 'splicesite',
+      'event_label' : 'change exon'
+      });
+  });
+    
+  $(document).on('change', "input[name='ssTypeInput']", function() {
+    gtag('event', 'change', {
+      'event_category': 'splicesite',
+      'event_label' : 'change ss type'
+      });
+  });
+  
+  $(document).on('click', "#ui-tab-40", function() {
+    gtag('event', 'click', {
+      'event_category': 'faq',
+      'event_label' : 'open faq'
+      });
+  });
+  
+  $(document).on('click', "shiny:filedownload", function() {
+    gtag('event', 'click', {
+      'event_category': 'download',
+      'event_label' : 'download table'
+      });
+  });
+</script>

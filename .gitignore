@@ -1,0 +1,11 @@
+/.Rproj.user/
+*.Rproj
+.Rhistory
+.DS_Store
+*/.DS_Store
+.RData
+rsconnect/*
+.Rproj.user
+
+# Ignore DB credentials
+config.yml

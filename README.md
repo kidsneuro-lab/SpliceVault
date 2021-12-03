@@ -24,6 +24,15 @@ Whilst not geared towards self-hosting, it is possible to install SpliceVault lo
 1. Postgresql v13 database hosting splicing events. (Note: An [SQL script](https://github.com/kidsneuro-lab/SpliceVault/wiki/SQL-script-to-create-missplicing-database) has been provided on the Wiki for convenience)
    Note: You may use [dockerised postgres](https://hub.docker.com/_/postgres) or [postgres app](https://postgresapp.com/) (if on a Mac)
 
-2. Splicing events datasets to load into the database (This can be obtained from TBC) and loaded using `psql`
+2. Splicing events datasets to load into the database (see below) and loaded using `psql`
 3. Set up [config.yml](https://github.com/kidsneuro-lab/SpliceVault/wiki/config.yml-syntax)
 2. Shiny app navigating Missplicing events (this repository). This is purely a database frontend that makes it easy to navigate Splice junction datasets. This has been primarily designed with https://www.shinyapps.io/ and running this locally may require installation of additional dependencies
+
+## Download Source Data 
+
+300K-RNA and 40K-RNA are available at the following links:
+
+https://storage.googleapis.com/misspl-db-data/misspl_events_300k_hg38.sql.gz
+https://storage.googleapis.com/misspl-db-data/misspl_events_40k_hg19.sql.gz
+
+The files are stored in google storage and are set to 'requester pays'. Please ensure you have a billing project.

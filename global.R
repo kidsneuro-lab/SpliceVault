@@ -1,5 +1,7 @@
 source('dependencies.R')
 
+flog.threshold("DEBUG")
+
 # DATA TRANSFORMATION AND NEW VARIABLES -----------------------------------
 #Sys.setenv(R_CONFIG_ACTIVE = "local")
 conn_args <- config::get("dataconnection")
@@ -11,6 +13,7 @@ con <- dbConnect(RPostgres::Postgres(),
                  password = conn_args$password
 )
 
+#### 40k hg19 ####
 gene_names_40k_ensembl <- dbGetQuery(con,
                                      "SELECT DISTINCT gene_name FROM misspl_app.misspl_events_40k_hg19_tx
                             WHERE transcript_type='ensembl'
@@ -23,17 +26,24 @@ gene_names_40k_refseq <- dbGetQuery(con,
 gene_names_40k_refseq <- gene_names_40k_refseq$gene_name
 
 
+#### 300k hg38 ####
+
 gene_names_300k_ensembl <- dbGetQuery(con,
-                                      "SELECT DISTINCT gene_name FROM misspl_app.misspl_events_300k_hg38_tx
-                            WHERE transcript_type='ensembl'
-                            ORDER BY gene_name")
+                                      "SELECT DISTINCT gene_name 
+                                        FROM misspl_app.ref_tx 
+                                        WHERE transcript_type='ensembl'
+                                      ORDER BY gene_name")
 gene_names_300k_ensembl <- gene_names_300k_ensembl$gene_name
 
 gene_names_300k_refseq <- dbGetQuery(con,
-                                     "SELECT DISTINCT gene_name FROM misspl_app.misspl_events_300k_hg38_tx
-                                             WHERE transcript_type='refseq'
-                            ORDER BY gene_name")
+                                     "SELECT DISTINCT gene_name 
+                                        FROM misspl_app.ref_tx 
+                                        WHERE transcript_type='refseq'
+                                      ORDER BY gene_name")
 gene_names_300k_refseq <- gene_names_300k_refseq$gene_name
+
+#### 300k hg38 v2 ####
+
 
 steps <- fread("help.csv")
 faq <- fread("faq.csv")

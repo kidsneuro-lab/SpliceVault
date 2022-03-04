@@ -53,6 +53,11 @@ ui <- dashboardPage(
                     value = 600, step = 100,
                     pre = "+/-", post= ' nt'),
         checkboxInput("allcryptics", "Show all Cryptics", value = FALSE),
+        selectInput(inputId = "tissuesInput", 
+                    multiple = F, 
+                    choices = c("All", "Brain", "Bile"), 
+                    label = "GTEx Tissue"
+        ),
         br(),
         fluidRow(
           column(6, align="center", offset = 3,

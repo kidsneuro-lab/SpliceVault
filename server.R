@@ -32,55 +32,133 @@ server <- function(input, output, session) {
                         db = '300k_hg38', '40k_hg19')
   
   #get list of transcripts for select box based on selected gene
-  observeEvent({input$geneInput
-                input$txTypeInput
-                },{
-    tx_query <- paste0("SELECT tx_id || CASE WHEN canonical = 1 THEN ' (Canonical)' ELSE '' END AS display_value,
-                                     gene_tx_id
-                                     FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))],"_tx
-                                     WHERE gene_name = '",isolate(input$geneInput), "' 
-                                     AND transcript_type = '",  tolower(isolate(input$txTypeInput)), "'
-                                     ORDER BY canonical DESC, tx_id;")
-    txs <- dbGetQuery(con, tx_query)
-    if (input$txInput  != "" & input$txInput %in% txs$display_value) {
-      presel = input$txInput
-    } else {
-      presel = txs$display_value[1]
-    }
+  observeEvent({
+    input$geneInput
+    input$txTypeInput
+  },
+  {
+    flog.debug("DB %s", isolate(input$dbInput))
+    flog.debug("Gene %s", isolate(input$geneInput))
+    flog.debug("Transcript type %s", isolate(input$txTypeInput))
     
-    
-    updateSelectizeInput(session = session,
-                         inputId = 'txInput',
-                         choices = txs$display_value,
-                         selected = presel,
-                         server = TRUE)
-                })
+    switch (input$dbInput,
+            "40K-RNA (hg19)" = {
+              tx_query <- paste0("SELECT tx_id || CASE WHEN canonical = 1 THEN ' (Canonical)' ELSE '' END AS display_value,
+                             gene_tx_id
+                             FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))],"_tx
+                             WHERE gene_name = '",isolate(input$geneInput), "' 
+                             AND transcript_type = '",  tolower(isolate(input$txTypeInput)), "'
+                             ORDER BY canonical DESC, tx_id;")
+              txs <- dbGetQuery(con, tx_query)
+              
+              if (input$txInput  != "" & input$txInput %in% txs$display_value) {
+                presel = input$txInput
+              } else {
+                presel = txs$display_value[1]
+              }
+              
+              updateSelectizeInput(
+                session = session,
+                inputId = 'txInput',
+                choices = txs$display_value,
+                selected = presel,
+                server = TRUE
+              )
+            },
+            "300K-RNA (hg38)" = {
+              # Switched to glue (See https://db.rstudio.com/best-practices/run-queries-safely for more info)
+              # Unfortunately, DBI paramterised query didn't appear to work with RPostgres. Not sure why
+              tx_query <-
+                glue_sql(
+                  "SELECT tx_id || CASE WHEN canonical THEN ' (Canonical)' ELSE '' END AS display_value,
+                                            transcript_id
+                                       FROM misspl_app.ref_tx
+                                      WHERE transcript_type = {tt} AND gene_name = {gn}
+                                     ORDER BY canonical DESC, transcript_id;",
+                  tt = tolower(isolate(input$txTypeInput)),
+                  gn = isolate(input$geneInput),
+                  .con = con
+                )
+              txs <- dbGetQuery(con, tx_query)
+              
+              txs_list <- txs$transcript_id
+              
+              
+              if (input$txInput != "" & input$txInput %in% txs$display_value) {
+                presel = txs$transcript_id
+              } else {
+                presel = txs$transcript_id[1]
+              }
+              
+              updateSelectizeInput(
+                session = session,
+                inputId = 'txInput',
+                choices = setNames(txs$transcript_id, txs$display_value),
+                selected = presel,
+                server = TRUE
+              )
+            })
+  })
   
   # get list of exon numbers for selected transcript
-  observeEvent({input$dbInput
-                input$txTypeInput
-                input$txInput
-                input$ssTypeInput},{
-    ex_query <- paste0("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS exon_no
-    FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_tx tx
-    JOIN misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_events evnt
-    ON tx.gene_tx_id = evnt.gene_tx_id
-    AND ss_type = '", tolower(isolate(input$ssTypeInput)), "'
-    AND tx.transcript_type = '", tolower(isolate(input$txTypeInput)), "'
-    AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', isolate(input$txInput)), "' ORDER BY exon_no ASC;")
-    ex <- dbGetQuery(con, ex_query)
+  observeEvent({
+    input$dbInput
+    input$txTypeInput
+    input$txInput
+    input$ssTypeInput
+  }, {
+    switch (input$dbInput,
+            "40K-RNA (hg19)" = {
+              ex_query <- paste0("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS exon_no
+              FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_tx tx
+              JOIN misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_events evnt
+              ON tx.gene_tx_id = evnt.gene_tx_id
+              AND ss_type = '", tolower(isolate(input$ssTypeInput)), "'
+              AND tx.transcript_type = '", tolower(isolate(input$txTypeInput)), "'
+              AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', isolate(input$txInput)), "' ORDER BY exon_no ASC;")
+              
+              ex <- dbGetQuery(con, ex_query)
+              
+              if (as.numeric(gsub(' \\((.*?)\\)', '', input$exonInput)) %in% ex$exon_no) {
+                presel = ex$display_value[which(ex$exon_no == gsub(' \\((.*?)\\)', '', input$exonInput))]
+              } else {
+                presel = ex$display_value[1]
+              }
+            },
+            "300K-RNA (hg38)" = {
+              # ex_query <- glue_sql("SELECT re.exon_no || ' (g.' || rss.splice_site_pos || ')' AS display_value, re.exon_id 
+              #                         FROM misspl_app.ref_exons re 
+              #                       JOIN misspl_app.ref_splice_sites rss 
+              #                         ON re.exon_id = rss.exon_id 
+              #                         AND rss.ss_type = {ss_type}
+              #                        WHERE re.transcript_id = {transcript_id}
+              #                       ORDER BY re.exon_no ASC;",
+              #                      ss_type = tolower(isolate(input$ssTypeInput)),
+              #                      transcript_id = 
+              ex_query <- paste0("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS exon_no
+              FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_tx tx
+              JOIN misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_events evnt
+              ON tx.gene_tx_id = evnt.gene_tx_id
+              AND ss_type = '", tolower(isolate(input$ssTypeInput)), "'
+              AND tx.transcript_type = '", tolower(isolate(input$txTypeInput)), "'
+              AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', isolate(input$txInput)), "' ORDER BY exon_no ASC;")
+              
+              ex <- dbGetQuery(con, ex_query)
+              
+              if (as.numeric(gsub(' \\((.*?)\\)', '', input$exonInput)) %in% ex$exon_no) {
+                presel = ex$display_value[which(ex$exon_no == gsub(' \\((.*?)\\)', '', input$exonInput))]
+              } else {
+                presel = ex$display_value[1]
+              }
+            })
     
-    if (as.numeric(gsub(' \\((.*?)\\)', '', input$exonInput)) %in% ex$exon_no) {
-      presel = ex$display_value[which(ex$exon_no == gsub(' \\((.*?)\\)', '', input$exonInput))]
-    } else {
-      presel = ex$display_value[1]
-    }
-    
-    updateSelectizeInput(session = session,
-                         inputId = 'exonInput',
-                         choices = ex$display_value,
-                         selected = presel,
-                         server = TRUE)
+    updateSelectizeInput(
+      session = session,
+      inputId = 'exonInput',
+      choices = ex$display_value,
+      selected = presel,
+      server = TRUE
+    )
   })
   
   # grey out # events when 'show all events' is selected
@@ -107,8 +185,6 @@ server <- function(input, output, session) {
     shinyjs::toggleState("cssInput", condition = !cryps())
   })
   
-  
-  
   # hide the underlying selectInput in sidebar for better design
   observeEvent("", {
     hide("tab")
@@ -116,12 +192,18 @@ server <- function(input, output, session) {
 
   # restore to defaults button
   observeEvent(input$restore, {
-    updateSliderInput(session, "eventsNoInput", value=4)
-    updateSliderInput(session, "esInput", value=2)
-    updateSliderInput(session, "cssInput", value=600)
-    updateCheckboxInput(session=session, inputId="allevents", value = FALSE)
-    updateCheckboxInput(session=session, inputId="allskips", value = FALSE)
-    updateCheckboxInput(session=session, inputId="allcryptics", value = FALSE)
+    updateSliderInput(session, "eventsNoInput", value = 4)
+    updateSliderInput(session, "esInput", value = 2)
+    updateSliderInput(session, "cssInput", value = 600)
+    updateCheckboxInput(session = session,
+                        inputId = "allevents",
+                        value = FALSE)
+    updateCheckboxInput(session = session,
+                        inputId = "allskips",
+                        value = FALSE)
+    updateCheckboxInput(session = session,
+                        inputId = "allcryptics",
+                        value = FALSE)
   })
   
   # UI - OUTCOME - 3 ---------------------------------------------------

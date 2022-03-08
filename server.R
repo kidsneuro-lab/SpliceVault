@@ -1,165 +1,151 @@
+source("helpers.R")
 
 server <- function(input, output, session) {
 
-  # change gene name options based on selected database and transcript type. default to prior selected gene name if available
+  #### Initialise ####
   observeEvent({
     input$dbInput
     input$txTypeInput
   }, {
-    if (input$dbInput == '300K-RNA (hg38)' & input$txTypeInput == 'Ensembl') {
-      genenames <- gene_names_300k_ensembl
-    } else if (input$dbInput == '300K-RNA (hg38)' & input$txTypeInput == 'RefSeq') {
-      genenames <- gene_names_300k_refseq
-    } else if (input$dbInput == '40K-RNA (hg19)' & input$txTypeInput == 'Ensembl') {
-      genenames <- gene_names_40k_ensembl
-    } else if (input$dbInput == '40K-RNA (hg19)' & input$txTypeInput == 'RefSeq') {
-      genenames <- gene_names_40k_refseq
-    }
-    if (input$geneInput %in% genenames) {
-      presel = input$geneInput 
+    # Genes list
+    flog.debug("Selection of DB & Transcript type")
+    flog.debug("Switching to DB %s", isolate(input$dbInput))
+    flog.debug("Switching to Transcript type %s", isolate(input$txTypeInput))
+    
+    genenames <- get_genes(db = input$dbInput,
+                           transcript_type = tolower(input$txTypeInput))$gene_name
+    
+    geneInput <- isolate(input$geneInput)
+
+    if (geneInput %in% genenames & geneInput != "") {
+      gene_presel <- geneInput
     } else {
-      presel = genenames[1]
+      gene_presel <- genenames[1]
     }
-    # update UI
+
     updateSelectizeInput(session = session,
                          inputId = 'geneInput',
                          choices = genenames,
-                         selected = presel,
+                         selected = gene_presel,
                          server = TRUE)
-  })
+    
+    # Transcripts list
+    tx <- get_tx(db = input$dbInput,
+                 transcript_type = tolower(isolate(input$txTypeInput)),
+                 gene_name = gene_presel)
+    
+    tx_list <- setNames(tx$id, tx$display_value)
+    txInput <- isolate(input$txInput)
+    
+    if (txInput %in% tx$id & txInput != "") {
+      tx_presel <- txInput
+    } else {
+      tx_presel <- tx_list[1]
+    }
 
-  db_dict <- data.frame(input = c('300K-RNA (hg38)','40K-RNA (hg19)'),
-                        db = '300k_hg38', '40k_hg19')
+    updateSelectizeInput(session = session,
+                         inputId = 'txInput',
+                         choices = tx_list,
+                         selected = tx_presel,
+                         server = TRUE)
+    
+    # Exons list
+    exons <- get_exons(db = input$dbInput,
+                       transcript_id = tx_presel,
+                       transcript_type = tolower(isolate(input$txTypeInput)),
+                       ss_type = tolower(isolate(input$ssTypeInput)))
+    
+    exons_list <- setNames(exons$id, exons$display_value)
+    exonInput <- isolate(input$exonInput)
+    
+    if (exonInput %in% exons$id & exonInput != "") {
+      ex_presel <- exonInput
+    } else {
+      ex_presel <- exons_list[1]
+    }
+    
+    updateSelectizeInput(session = session,
+                         inputId = 'exonInput',
+                         choices = exons_list,
+                         selected = ex_presel,
+                         server = TRUE)
+    
+    # Tissues list
+    output$tissuesInputUI <- renderUI({
+      if (input$dbInput == '300K-RNA (hg38)') {
+        tissues <- get_tissues()
+        tissues_list <- setNames(c(0, tissues$id), c("All", tissues$display_value))
+        
+        selectizeInput(label = "Tissues", 
+                    inputId = 'tissuesInput',
+                    choices = tissues_list,
+                    selected = tissues_list[1])
+        
+      } else {
+        return(NULL)
+      }
+    })
+  })
   
-  #get list of transcripts for select box based on selected gene
+  #### Handle selection of gene ####
   observeEvent({
     input$geneInput
-    input$txTypeInput
-  },
-  {
-    flog.debug("DB %s", isolate(input$dbInput))
-    flog.debug("Gene %s", isolate(input$geneInput))
-    flog.debug("Transcript type %s", isolate(input$txTypeInput))
-    
-    switch (input$dbInput,
-            "40K-RNA (hg19)" = {
-              tx_query <- paste0("SELECT tx_id || CASE WHEN canonical = 1 THEN ' (Canonical)' ELSE '' END AS display_value,
-                             gene_tx_id
-                             FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))],"_tx
-                             WHERE gene_name = '",isolate(input$geneInput), "' 
-                             AND transcript_type = '",  tolower(isolate(input$txTypeInput)), "'
-                             ORDER BY canonical DESC, tx_id;")
-              txs <- dbGetQuery(con, tx_query)
-              
-              if (input$txInput  != "" & input$txInput %in% txs$display_value) {
-                presel = input$txInput
-              } else {
-                presel = txs$display_value[1]
-              }
-              
-              updateSelectizeInput(
-                session = session,
-                inputId = 'txInput',
-                choices = txs$display_value,
-                selected = presel,
-                server = TRUE
-              )
-            },
-            "300K-RNA (hg38)" = {
-              # Switched to glue (See https://db.rstudio.com/best-practices/run-queries-safely for more info)
-              # Unfortunately, DBI paramterised query didn't appear to work with RPostgres. Not sure why
-              tx_query <-
-                glue_sql(
-                  "SELECT tx_id || CASE WHEN canonical THEN ' (Canonical)' ELSE '' END AS display_value,
-                                            transcript_id
-                                       FROM misspl_app.ref_tx
-                                      WHERE transcript_type = {tt} AND gene_name = {gn}
-                                     ORDER BY canonical DESC, transcript_id;",
-                  tt = tolower(isolate(input$txTypeInput)),
-                  gn = isolate(input$geneInput),
-                  .con = con
-                )
-              txs <- dbGetQuery(con, tx_query)
-              
-              txs_list <- txs$transcript_id
-              
-              
-              if (input$txInput != "" & input$txInput %in% txs$display_value) {
-                presel = txs$transcript_id
-              } else {
-                presel = txs$transcript_id[1]
-              }
-              
-              updateSelectizeInput(
-                session = session,
-                inputId = 'txInput',
-                choices = setNames(txs$transcript_id, txs$display_value),
-                selected = presel,
-                server = TRUE
-              )
-            })
+  }, {
+    if (!input$geneInput == "") {
+      flog.debug("Selection of Gene")
+      
+      tx <- get_tx(db = isolate(input$dbInput),
+                   transcript_type = tolower(isolate(input$txTypeInput)),
+                   gene_name = isolate(input$geneInput))
+      
+      tx_list <- setNames(tx$id, tx$display_value)
+      txInput <- isolate(input$txInput)
+      
+      if (txInput %in% tx$id & txInput != "") {
+        presel <- txInput
+      } else {
+        presel <- tx_list[1]
+      }
+      
+      updateSelectizeInput(session = session,
+                           inputId = 'txInput',
+                           choices = tx_list,
+                           selected = presel,
+                           server = TRUE)
+    }
   })
   
-  # get list of exon numbers for selected transcript
+  #### Handle selection of Transcript / SS type ####
   observeEvent({
-    input$dbInput
-    input$txTypeInput
     input$txInput
     input$ssTypeInput
   }, {
-    switch (input$dbInput,
-            "40K-RNA (hg19)" = {
-              ex_query <- paste0("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS exon_no
-              FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_tx tx
-              JOIN misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_events evnt
-              ON tx.gene_tx_id = evnt.gene_tx_id
-              AND ss_type = '", tolower(isolate(input$ssTypeInput)), "'
-              AND tx.transcript_type = '", tolower(isolate(input$txTypeInput)), "'
-              AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', isolate(input$txInput)), "' ORDER BY exon_no ASC;")
-              
-              ex <- dbGetQuery(con, ex_query)
-              
-              if (as.numeric(gsub(' \\((.*?)\\)', '', input$exonInput)) %in% ex$exon_no) {
-                presel = ex$display_value[which(ex$exon_no == gsub(' \\((.*?)\\)', '', input$exonInput))]
-              } else {
-                presel = ex$display_value[1]
-              }
-            },
-            "300K-RNA (hg38)" = {
-              # ex_query <- glue_sql("SELECT re.exon_no || ' (g.' || rss.splice_site_pos || ')' AS display_value, re.exon_id 
-              #                         FROM misspl_app.ref_exons re 
-              #                       JOIN misspl_app.ref_splice_sites rss 
-              #                         ON re.exon_id = rss.exon_id 
-              #                         AND rss.ss_type = {ss_type}
-              #                        WHERE re.transcript_id = {transcript_id}
-              #                       ORDER BY re.exon_no ASC;",
-              #                      ss_type = tolower(isolate(input$ssTypeInput)),
-              #                      transcript_id = 
-              ex_query <- paste0("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS exon_no
-              FROM misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_tx tx
-              JOIN misspl_app.misspl_events_", db_dict$db[which(db_dict$input == isolate(input$dbInput))], "_events evnt
-              ON tx.gene_tx_id = evnt.gene_tx_id
-              AND ss_type = '", tolower(isolate(input$ssTypeInput)), "'
-              AND tx.transcript_type = '", tolower(isolate(input$txTypeInput)), "'
-              AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', isolate(input$txInput)), "' ORDER BY exon_no ASC;")
-              
-              ex <- dbGetQuery(con, ex_query)
-              
-              if (as.numeric(gsub(' \\((.*?)\\)', '', input$exonInput)) %in% ex$exon_no) {
-                presel = ex$display_value[which(ex$exon_no == gsub(' \\((.*?)\\)', '', input$exonInput))]
-              } else {
-                presel = ex$display_value[1]
-              }
-            })
-    
-    updateSelectizeInput(
-      session = session,
-      inputId = 'exonInput',
-      choices = ex$display_value,
-      selected = presel,
-      server = TRUE
-    )
+    if (!input$txInput == "") {
+      flog.debug("Selection of Exon")
+      
+      exons <- get_exons(db = isolate(input$dbInput),
+                         transcript_id = isolate(input$txInput),
+                         transcript_type = tolower(isolate(input$txTypeInput)),
+                         ss_type = tolower(isolate(input$ssTypeInput)))
+      
+      exons_list <- setNames(exons$id, exons$display_value)
+      exonInput <- isolate(input$exonInput)
+      
+      if (exonInput %in% exons$id & exonInput != "") {
+        presel <- exonInput
+      } else {
+        presel <- exons_list[1]
+      }
+      
+      updateSelectizeInput(session = session,
+                           inputId = 'exonInput',
+                           choices = exons_list,
+                           selected = presel,
+                           server = TRUE)
+    }
   })
+  
+  #### Sidebar settings ####
   
   # grey out # events when 'show all events' is selected
   events <- reactive({
@@ -189,7 +175,7 @@ server <- function(input, output, session) {
   observeEvent("", {
     hide("tab")
   })
-
+  
   # restore to defaults button
   observeEvent(input$restore, {
     updateSliderInput(session, "eventsNoInput", value = 4)
@@ -205,31 +191,6 @@ server <- function(input, output, session) {
                         inputId = "allcryptics",
                         value = FALSE)
   })
-  
-  # UI - OUTCOME - 3 ---------------------------------------------------
-
-
-
-  # output$output_table <- renderUI({
-  #   div(
-  #     style = "position: relative;width:100%",
-  #     tabBox(
-  #       id = "output_table",
-  #       width = 'auto',
-  #       height = 'auto',
-  #       tabPanel(
-  #         title = uiOutput("title_panel"),
-  #         withSpinner(
-  #           DT::dataTableOutput("table_ms", height = 'auto'),
-  #           type = 4,
-  #           size = 0.7,
-  #           color = "#606164"
-  #         )
-  #       )
-  #     )
-  #   )
-  # })
-  
   
   output$title_panel <- renderText({
     "Mis-Splicing Events Table"
@@ -258,22 +219,20 @@ server <- function(input, output, session) {
                                             settings ))
     
   })
-  # output$title_panel <- eventReactive(input$confirm, {
-  #   paste0("Showing Top ", input$eventsNoInput, " events in ", input$dbInput)
-  # }, ignoreNULL = FALSE)
   
   table_ms <- eventReactive(input$confirm, {
     if (input$dbInput == '300K-RNA (hg38)') {
       db = '300k_hg38'
-      second = 'sra'
-      third = 'max_uniq_reads'
-      set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Distance', 
-                       'Samples (GTEx)', 'Samples (SRA)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV')
+      if (input$tissuesInput == 0) {
+        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Distance', 
+                         'Samples (GTEx)', 'Samples (SRA)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV')
+      } else {
+        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Distance', 
+                         'Samples (GTEx)', 'Max Reads (GTEx)', 'Splice Junction', 'IGV')
+      }
       genome = 'hg38'
     } else if (input$dbInput == '40K-RNA (hg19)') {
       db = '40k_hg19'
-      second = 'intropolis'
-      third = 'gtex_max_uniq_map_reads'
       set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Intropolis?', 'Skipped Exons', 'Cryptic Distance', 
                        'Samples (GTEx)', 'Samples (Intropolis)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV')
       genome = 'hg19'
@@ -293,31 +252,18 @@ server <- function(input, output, session) {
     } else {
       event_filt = ""
     }
-    table_query <- paste0("SELECT evnt.splicing_event_class,
-                                  evnt.missplicing_inframe,
-                                  evnt.in_gtex,
-                                  evnt.in_", second,",
-                                  evnt.skipped_exons_id,
-                                  evnt.cryptic_distance,
-                                  evnt.gtex_sample_count,
-                                  evnt.",second,"_sample_count,
-                                  evnt.",third,",
-                                  evnt.sample_count,
-                                  evnt.chr,
-                                  evnt.donor_pos,
-                                  evnt.acceptor_pos
-                          FROM misspl_app.misspl_events_", db, "_tx tx
-                          JOIN misspl_app.misspl_events_", db, "_events evnt
-                          ON tx.gene_tx_id = evnt.gene_tx_id
-                          AND ss_type = '", tolower(input$ssTypeInput), "'
-                          AND exon_no = ", gsub(' \\((.*?)\\)', '', input$exonInput),
-                          cryp_filt,
-                          es_filt,
-                          " AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', input$txInput), "'
-                          ORDER BY evnt.sample_count DESC",
-                          event_filt, ";")
-    set_table <- dbGetQuery(con, table_query)
+
+    set_table <- get_misspl_stats(db = input$dbInput, 
+                                  ss_type = tolower(input$ssTypeInput), 
+                                  exon_id = input$exonInput, 
+                                  transcript_id = input$txInput, 
+                                  cryp_filt = cryp_filt, 
+                                  es_filt = es_filt, 
+                                  event_filt = event_filt, 
+                                  tissue_id = input$tissuesInput)
+    
     ann_samples <- set_table %>% filter(splicing_event_class == 'normal splicing') %>% pull(sample_count)
+    
     if (input$dbInput == '300K-RNA (hg38)') {
       set_table <- set_table %>% 
         rowwise() %>%
@@ -332,9 +278,6 @@ server <- function(input, output, session) {
                cryptic_distance = ifelse(cryptic_distance > 0, 
                                          paste0('+', as.character(cryptic_distance)), 
                                          as.character(cryptic_distance)),
-               missplicing_inframe = ifelse(missplicing_inframe == TRUE, 'yes', ''),
-               in_gtex = ifelse(in_gtex == TRUE, 'yes', ''),
-               in_sra = ifelse(in_sra == TRUE, 'yes', ''),
                sample_count = paste0(sample_count, ' (', samples_prop, ')')) %>%
         select(-chr, -donor_pos, -acceptor_pos, -start, -end, -samples_prop)
     } else {
@@ -351,14 +294,11 @@ server <- function(input, output, session) {
                cryptic_distance = ifelse(cryptic_distance > 0, 
                                          paste0('+', as.character(cryptic_distance)), 
                                          as.character(cryptic_distance)),
-               missplicing_inframe = ifelse(missplicing_inframe == TRUE, 'yes', ''),
-               in_gtex = ifelse(in_gtex == TRUE, 'yes', ''),
-               in_intropolis = ifelse(in_intropolis == TRUE, 'yes', ''),
                sample_count = paste0(sample_count, ' (', samples_prop, ')')) %>%
         select(-chr, -donor_pos, -acceptor_pos, -start, -end, -samples_prop)
     }
     
-   # http://localhost:port/goto?locus=2:79087958-79087659&genome=hg38
+    # http://localhost:port/goto?locus=2:79087958-79087659&genome=hg38
     if (isolate(input$allcryptics) == TRUE & isolate(input$allskips) == TRUE) {
       settings = ''
     } else if (isolate(input$allcryptics) == TRUE & isolate(input$allskips) == FALSE) {
@@ -387,9 +327,9 @@ server <- function(input, output, session) {
       colnames = set_colnames,
       class = 'cell-border stripe',
       options = list(
-        columnDefs = list(list(className = 'dt-center', targets = c(0:5,10:11)),
-                          list(className = 'dt-right', targets = c(9))),
-        dom = 'Bfrtp',
+        # columnDefs = list(list(className = 'dt-center', targets = c(0:5,10:11)),
+        #                   list(className = 'dt-right', targets = c(9))),
+        # dom = 'Bfrtp',
         buttons = list('copy', list(
           extend = 'collection',
           buttons =list(
@@ -424,7 +364,7 @@ server <- function(input, output, session) {
   
   output$table_ms <- DT::renderDataTable({
     table_ms() 
-    }, server = FALSE)
+  }, server = FALSE)
   
   # disable confirm button until inputs are available
   observe({

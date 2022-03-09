@@ -1,6 +1,8 @@
 source('dependencies.R')
 
-flog.threshold("TRACE")
+flog.threshold("INFO")
+layout <- layout.format('[~l] [~t] [~n.~f] ~m')
+flog.layout(layout)
 
 # DATA TRANSFORMATION AND NEW VARIABLES -----------------------------------
 #Sys.setenv(R_CONFIG_ACTIVE = "local")

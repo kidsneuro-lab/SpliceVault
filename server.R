@@ -7,11 +7,11 @@ server <- function(input, output, session) {
     input$dbInput
     input$txTypeInput
   }, {
-    # Genes list
     flog.debug("Selection of DB & Transcript type")
     flog.debug("Switching to DB %s", isolate(input$dbInput))
     flog.debug("Switching to Transcript type %s", isolate(input$txTypeInput))
     
+    # Genes list
     genenames <- get_genes(db = input$dbInput,
                            transcript_type = tolower(input$txTypeInput))$gene_name
     
@@ -35,6 +35,7 @@ server <- function(input, output, session) {
                  gene_name = gene_presel)
     
     tx_list <- setNames(tx$id, tx$display_value)
+    session$userData$tx <- tx_list
     txInput <- isolate(input$txInput)
     
     if (txInput %in% tx$id & txInput != "") {
@@ -56,6 +57,7 @@ server <- function(input, output, session) {
                        ss_type = tolower(isolate(input$ssTypeInput)))
     
     exons_list <- setNames(exons$id, exons$display_value)
+    session$userData$exons <- exons_list
     exonInput <- isolate(input$exonInput)
     
     if (exonInput %in% exons$id & exonInput != "") {
@@ -75,8 +77,9 @@ server <- function(input, output, session) {
       if (input$dbInput == '300K-RNA (hg38)') {
         tissues <- get_tissues()
         tissues_list <- setNames(c(0, tissues$id), c("All", tissues$display_value))
+        session$userData$tissues <- tissues_list
         
-        selectizeInput(label = "Tissues", 
+        selectizeInput(label = "Tissues (* = Accessible Tissues)", 
                     inputId = 'tissuesInput',
                     choices = tissues_list,
                     selected = tissues_list[1])
@@ -99,6 +102,7 @@ server <- function(input, output, session) {
                    gene_name = isolate(input$geneInput))
       
       tx_list <- setNames(tx$id, tx$display_value)
+      session$userData$tx <- tx_list
       txInput <- isolate(input$txInput)
       
       if (txInput %in% tx$id & txInput != "") {
@@ -129,6 +133,7 @@ server <- function(input, output, session) {
                          ss_type = tolower(isolate(input$ssTypeInput)))
       
       exons_list <- setNames(exons$id, exons$display_value)
+      session$userData$exons <- exons_list
       exonInput <- isolate(input$exonInput)
       
       if (exonInput %in% exons$id & exonInput != "") {
@@ -190,12 +195,19 @@ server <- function(input, output, session) {
     updateCheckboxInput(session = session,
                         inputId = "allcryptics",
                         value = FALSE)
+    updateSelectizeInput(session = session,
+                         inputId = 'dbInput',
+                         selected = '300K-RNA (hg38)')
+    updateSelectizeInput(session = session,
+                         inputId = 'tissuesInput',
+                         selected = 0)
   })
   
   output$title_panel <- renderText({
     "Mis-Splicing Events Table"
   })
   
+  #### Generate table ####
   observeEvent(input$confirm, {
     if (isolate(input$allcryptics) == TRUE & isolate(input$allskips) == TRUE) {
       settings = ''
@@ -213,28 +225,66 @@ server <- function(input, output, session) {
     }
     output$table_title <- renderText(paste0("Showing ", events, 
                                             " unannotated events in ", isolate(input$dbInput),
-                                            " for ", gsub(' \\(Canonical\\)', '', isolate(input$txInput)),
+                                            " for ", gsub(' \\(Canonical\\)', '', names(session$userData$tx)[session$userData$tx==isolate(input$txInput)]), " ",
+                                            ifelse(isolate(input$tissuesInput) == 0, "", paste0(" [", names(session$userData$tissues)[session$userData$tissues==isolate(input$tissuesInput)], "] ")),
                                             "(",isolate(input$geneInput), ")",
-                                            " ", isolate(input$ssTypeInput)," " ,isolate(input$exonInput),
+                                            " ", isolate(input$ssTypeInput)," " , names(session$userData$exons)[session$userData$exons==isolate(input$exonInput)],
                                             settings ))
     
   })
   
+  #### Output table formatter ####
   table_ms <- eventReactive(input$confirm, {
     if (input$dbInput == '300K-RNA (hg38)') {
       db = '300k_hg38'
       if (input$tissuesInput == 0) {
         set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Distance', 
-                         'Samples (GTEx)', 'Samples (SRA)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV')
+                         'Samples (GTEx)', 'Samples (SRA)', 'Max Reads (GTEx)', 'Total Samples', 'Accessible Tissues (GTEx)', 'Splice Junction', 'IGV')
+        columnDefs <- list(list(className = 'dt-center', targets = c(0:5,10:12)),
+                           list(className = 'dt-right', targets = c(6:9)),
+                           list(
+                             targets = c(1,2,3),
+                             render = JS(
+                               "function(data, type, row, meta) {",
+                               "return data == 'Yes' ? '<span>&#10003;</span>' : '';",
+                               "}")
+                           ),
+                           list(
+                             targets = 10,
+                             render = JS(
+                               "function(data, type, row, meta) {",
+                               "return data.trimRight().charAt(data.trimRight().length - 1) == ',' ? data.trimRight().substr(0, data.trimRight().length - 2) : data;",
+                               "}")
+                           ))
+        
+  
       } else {
-        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Distance', 
+        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Skipped Exons', 'Cryptic Distance', 
                          'Samples (GTEx)', 'Max Reads (GTEx)', 'Splice Junction', 'IGV')
+        columnDefs <- list(list(className = 'dt-center', targets = c(0:4,6:8)),
+                           list(className = 'dt-right', targets = c(5)),
+                           list(
+                             targets = c(1,2),
+                             render = JS(
+                               "function(data, type, row, meta) {",
+                               "return data == 'Yes' ? '<span>&#10003;</span>' : '';",
+                               "}")
+                           ))
       }
       genome = 'hg38'
     } else if (input$dbInput == '40K-RNA (hg19)') {
       db = '40k_hg19'
       set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Intropolis?', 'Skipped Exons', 'Cryptic Distance', 
                        'Samples (GTEx)', 'Samples (Intropolis)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV')
+      columnDefs <- list(list(className = 'dt-center', targets = c(0:5,10:11)),
+                         list(className = 'dt-right', targets = c(9)),
+                         list(
+                           targets = c(1,2,3),
+                           render = JS(
+                             "function(data, type, row, meta) {",
+                             "return data == 'Yes' ? '<span>&#10003;</span>' : '';",
+                             "}")
+                         ))
       genome = 'hg19'
     }
     if (input$allcryptics == FALSE) {
@@ -260,7 +310,8 @@ server <- function(input, output, session) {
                                   cryp_filt = cryp_filt, 
                                   es_filt = es_filt, 
                                   event_filt = event_filt, 
-                                  tissue_id = input$tissuesInput)
+                                  tissue_id = input$tissuesInput,
+                                  events_limit = input$eventsNoInput + 1)
     
     ann_samples <- set_table %>% filter(splicing_event_class == 'normal splicing') %>% pull(sample_count)
     
@@ -327,9 +378,8 @@ server <- function(input, output, session) {
       colnames = set_colnames,
       class = 'cell-border stripe',
       options = list(
-        # columnDefs = list(list(className = 'dt-center', targets = c(0:5,10:11)),
-        #                   list(className = 'dt-right', targets = c(9))),
-        # dom = 'Bfrtp',
+        columnDefs = columnDefs,
+        dom = 'Bfrtp',
         buttons = list('copy', list(
           extend = 'collection',
           buttons =list(
@@ -348,7 +398,6 @@ server <- function(input, output, session) {
             )
           ),
           text = 'Download')),
-        style = "bootstrap",
         pageLength = 5,
         #lengthMenu = c(seq(5, 150, 10)),
         ordering = FALSE,

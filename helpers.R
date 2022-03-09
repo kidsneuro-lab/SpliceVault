@@ -6,7 +6,6 @@ get_genes <- function(db, transcript_type) {
                              ORDER BY gene_name",
                             transcript_type = transcript_type,
                             .con = con)
-            return(dbGetQuery(con, qry))
           },
           "300K-RNA (hg38)" = {
             qry <- glue_sql("SELECT DISTINCT gene_name 
@@ -15,8 +14,10 @@ get_genes <- function(db, transcript_type) {
                             ORDER BY gene_name",
                           transcript_type = transcript_type,
                           .con = con)
-            return(dbGetQuery(con, qry))
           })
+  flog.trace(qry)
+  genes <- dbGetQuery(con, qry)
+  return(genes)
 }
 
 get_tx <- function(db, transcript_type, gene_name) {
@@ -28,7 +29,6 @@ get_tx <- function(db, transcript_type, gene_name) {
                              WHERE gene_name = '",gene_name, "' 
                              AND transcript_type = '",  transcript_type, "'
                              ORDER BY canonical DESC, tx_id;")
-            txs <- dbGetQuery(con, tx_query)
           },
           "300K-RNA (hg38)" = {
             tx_query <-
@@ -42,8 +42,9 @@ get_tx <- function(db, transcript_type, gene_name) {
                 gene_name = gene_name,
                 .con = con
               )
-            txs <- dbGetQuery(con, tx_query)
           })
+  flog.trace(tx_query)
+  txs <- dbGetQuery(con, tx_query)
   return(txs)
 }
 
@@ -72,37 +73,39 @@ get_exons <- function(db, transcript_id, transcript_type, ss_type) {
                                  .con = con)
             ex <- dbGetQuery(con, ex_query)
           })
+  flog.trace(ex_query)
   return(ex)
 }
 
 get_tissues <- function() {
-  qry <- "SELECT CASE WHEN clinically_accessible THEN tissue || '*'
+  qry <- "SELECT CASE WHEN clinically_accessible THEN CASE WHEN tissue = 'Whole Blood' THEN 'Blood - Whole' ELSE tissue END || '*'
                       ELSE tissue END AS display_value, 
                  tissue_id AS id 
             FROM misspl_app.ref_tissues rt
-          ORDER BY tissue ;"
+          ORDER BY clinically_accessible DESC, display_value ;"
+  flog.trace(qry)
   res <- dbGetQuery(con, qry)
   return(res)
 }
 
-get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_filt, event_filt, tissue_id = NULL) {
+get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_filt, event_filt, tissue_id = NULL, events_limit = NULL) {
   flog.trace(event_filt)
   
   switch (db,
           "40K-RNA (hg19)" = {
             table_query <- paste0("SELECT evnt.splicing_event_class,
-                                            evnt.missplicing_inframe,
-                                            evnt.in_gtex,
-                                            evnt.in_intropolis,
-                                            evnt.skipped_exons_id,
-                                            evnt.cryptic_distance,
-                                            evnt.gtex_sample_count,
-                                            evnt.intropolis_sample_count,
-                                            evnt.gtex_max_uniq_map_reads,
-                                            evnt.sample_count,
-                                            evnt.chr,
-                                            evnt.donor_pos,
-                                            evnt.acceptor_pos
+                                          CASE WHEN evnt.missplicing_inframe = TRUE THEN 'Yes' ELSE 'No' END AS missplicing_inframe,
+                                          CASE WHEN evnt.in_gtex = TRUE THEN 'Yes' ELSE 'No' END AS in_gtex,
+                                          CASE WHEN evnt.in_intropolis = TRUE THEN 'Yes' ELSE 'No' END AS in_intropolis,
+                                          evnt.skipped_exons_id,
+                                          evnt.cryptic_distance,
+                                          evnt.gtex_sample_count,
+                                          evnt.intropolis_sample_count,
+                                          evnt.gtex_max_uniq_map_reads,
+                                          evnt.sample_count,
+                                          evnt.chr,
+                                          evnt.donor_pos,
+                                          evnt.acceptor_pos
                                     FROM misspl_app.misspl_events_40k_hg19_tx tx
                                     JOIN misspl_app.misspl_events_40k_hg19_events evnt
                                     ON tx.gene_tx_id = evnt.gene_tx_id
@@ -118,20 +121,40 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
             if (tissue_id == 0) {  # All tissues
               qry <- paste0("SELECT
                                   MS.splicing_event_class,
-                                  MS.missplicing_inframe,
-                                  MS.in_gtex,
-                                  MS.in_sra,
+                                  CASE WHEN MS.missplicing_inframe = TRUE THEN 'Yes' ELSE 'No' END AS missplicing_inframe,
+                                  CASE WHEN MS.in_gtex = TRUE THEN 'Yes' ELSE 'No' END AS in_gtex,
+                                  CASE WHEN MS.in_sra = TRUE THEN 'Yes' ELSE 'No' END AS in_sra,
                                   MS.skipped_exons_id,
                                   MS.cryptic_distance,
                                   MS.gtex_sample_count,
                                   MS.sra_sample_count,
                                   MS.max_junc_count,
                                   MS.gtex_sample_count + MS.sra_sample_count AS sample_count,
+                                  CASE WHEN tms1.tissue_id IS NOT NULL THEN 'B, ' ELSE '' END ||
+                                  CASE WHEN tms2.tissue_id IS NOT NULL THEN 'F, ' ELSE '' END ||
+                                  CASE WHEN tms3.tissue_id IS NOT NULL THEN 'M, ' ELSE '' END ||
+                                  CASE WHEN tms4.tissue_id IS NOT NULL THEN 'LCL, ' ELSE '' END AS clin_access_tissues,
                                   RME.chromosome AS chr,
                                   RME.donor_pos,
                                   RME.acceptor_pos
                               FROM
                                   misspl_app.missplicing_stats MS
+                              LEFT JOIN misspl_app.tissue_missplicing_stats tms1 ON -- Whole Blood
+                                  MS.misspl_stat_id = tms1.misspl_stat_id 
+                                  AND tms1.event_rank <= {events_limit}
+                                  AND tms1.tissue_id = 5
+                              LEFT JOIN misspl_app.tissue_missplicing_stats tms2 ON -- Fibroblasts
+                                  MS.misspl_stat_id = tms2.misspl_stat_id 
+                                  AND tms2.event_rank <= {events_limit}
+                                  AND tms2.tissue_id = 4
+                              LEFT JOIN misspl_app.tissue_missplicing_stats tms3 ON -- EBV-transformed lymphocytes
+                                  MS.misspl_stat_id = tms3.misspl_stat_id 
+                                  AND tms3.event_rank <= {events_limit}
+                                  AND tms3.tissue_id = 6
+                              LEFT JOIN misspl_app.tissue_missplicing_stats tms4 ON -- Muscle - Skeletal
+                                  MS.misspl_stat_id = tms4.misspl_stat_id 
+                                  AND tms4.event_rank <= {events_limit}
+                                  AND tms4.tissue_id = 30
                               INNER JOIN misspl_app.ref_exons RE ON
                                   MS.exon_id = RE.exon_id
                                   AND RE.transcript_id = MS.transcript_id 
@@ -151,6 +174,7 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                   sample_count DESC ",
                             event_filt, ";")
               table_query <- glue_sql(qry,
+                                      events_limit = events_limit,
                                       transcript_id = transcript_id,
                                       exon_id = exon_id,
                                       ss_type = ss_type,
@@ -158,8 +182,8 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
             } else {
               qry <- paste0("SELECT
                                   MS.splicing_event_class,
-                                  MS.missplicing_inframe,
-                                  MS.in_gtex,
+                                  CASE WHEN MS.missplicing_inframe = TRUE THEN 'Yes' ELSE 'No' END AS missplicing_inframe,
+                                  CASE WHEN MS.in_gtex = TRUE THEN 'Yes' ELSE 'No' END AS in_gtex,
                                   MS.skipped_exons_id,
                                   MS.cryptic_distance,
                                   TMS.tissue_sample_count AS sample_count,
@@ -200,9 +224,8 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                      .con = con)
             }
           })
-  
+
   flog.trace(table_query)
-  
   set_table <- dbGetQuery(con, table_query)
   return(set_table)
 }

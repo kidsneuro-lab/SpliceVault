@@ -238,7 +238,7 @@ server <- function(input, output, session) {
     if (input$dbInput == '300K-RNA (hg38)') {
       db = '300k_hg38'
       if (input$tissuesInput == 0) {
-        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Distance', 
+        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Position', 
                          'Samples (GTEx)', 'Samples (SRA)', 'Max Reads (GTEx)', 'Total Samples', 'Accessible Tissues (GTEx)', 'Splice Junction', 'IGV')
         columnDefs <- list(list(className = 'dt-center', targets = c(0:5,10:12)),
                            list(className = 'dt-right', targets = c(6:9)),
@@ -253,13 +253,13 @@ server <- function(input, output, session) {
                              targets = 10,
                              render = JS(
                                "function(data, type, row, meta) {",
-                               "return data.trimRight().charAt(data.trimRight().length - 1) == ',' ? data.trimRight().substr(0, data.trimRight().length - 2) : data;",
+                               "return data.trim().charAt(data.trim().length-1) == ',' ? data.trim().substr(0, data.trim().length - 1) : data;",
                                "}")
                            ))
         
   
       } else {
-        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Skipped Exons', 'Cryptic Distance', 
+        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Skipped Exons', 'Cryptic Position', 
                          'Samples (GTEx)', 'Max Reads (GTEx)', 'Splice Junction', 'IGV')
         columnDefs <- list(list(className = 'dt-center', targets = c(0:4,6:8)),
                            list(className = 'dt-right', targets = c(5)),
@@ -274,7 +274,7 @@ server <- function(input, output, session) {
       genome = 'hg38'
     } else if (input$dbInput == '40K-RNA (hg19)') {
       db = '40k_hg19'
-      set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Intropolis?', 'Skipped Exons', 'Cryptic Distance', 
+      set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Intropolis?', 'Skipped Exons', 'Cryptic Position', 
                        'Samples (GTEx)', 'Samples (Intropolis)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV')
       columnDefs <- list(list(className = 'dt-center', targets = c(0:5,10:11)),
                          list(className = 'dt-right', targets = c(9)),

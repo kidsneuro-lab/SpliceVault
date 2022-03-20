@@ -11,6 +11,14 @@ ui <- dashboardPage(
     
     title = span(img(src = "lariat.svg", height = 35), "SpliceVault"),
     titleWidth = 300,
+    
+    tags$li(class = "dropdown", actionButton(onclick="window.open('https://github.com/kidsneuro-lab/SpliceVault/issues/new', '_blank')",
+                                             icon = icon("bug"),
+                                             inputId = 'reportIssue',
+                                             label = "Report an issue",
+                                             btn_type = "button", width = 200,
+                                             style = "padding-bottom:0px; padding-top:0px; font-size: 16px; height: 50px;")),
+    
     dropdownMenu(
       type = "notifications", 
       headerText = strong("Help"), 
@@ -173,14 +181,14 @@ ui <- dashboardPage(
             title = uiOutput("title_panel"),
             div(h4(uiOutput("table_title"))),
             br(),
-            withSpinner(
               div(style = 'overflow-y:scroll;height:55vh;',
-                  DT::dataTableOutput("table_ms", height = 'auto') ,
-                  type = 4,
-                  size = 0.7,
-                  color = "#606164"
+                  withSpinner(
+                    DT::dataTableOutput("table_ms", height = 'auto') ,
+                    type = 1,
+                    size = 2,
+                    color = "#5977BA"
+                )
               )
-            )
           ),
           tabPanel(
             title = "FAQ",

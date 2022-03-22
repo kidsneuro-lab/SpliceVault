@@ -209,6 +209,14 @@ server <- function(input, output, session) {
   
   #### Generate table ####
   observeEvent(input$confirm, {
+    if (input$dbInput == '300K-RNA (hg38)' & input$tissuesInput == 0) {
+      output$clinAccessTissues <- renderUI({
+        tags$span("B - Blood Whole; F - Cells - Cultured fibroblasts; L - Cells - EBV-transformed lymphocytes; M - Muscle - Skeletal")
+      })
+    } else {
+      output$clinAccessTissues <- NULL
+    }
+    
     if (isolate(input$allcryptics) == TRUE & isolate(input$allskips) == TRUE) {
       settings = ''
     } else if (isolate(input$allcryptics) == TRUE & isolate(input$allskips) == FALSE) {

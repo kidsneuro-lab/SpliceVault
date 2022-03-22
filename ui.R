@@ -12,7 +12,7 @@ ui <- dashboardPage(
     title = span(img(src = "lariat.svg", height = 35), "SpliceVault"),
     titleWidth = 300,
     
-    tags$li(class = "dropdown", actionButton(onclick="window.open('https://github.com/kidsneuro-lab/SpliceVault/issues/new', '_blank')",
+    tags$li(class = "dropdown", actionButton(onclick="window.open('https://github.com/kidsneuro-lab/SpliceVault/issues', '_blank')",
                                              icon = icon("bug"),
                                              inputId = 'reportIssue',
                                              label = "Report an issue",
@@ -181,19 +181,20 @@ ui <- dashboardPage(
             title = uiOutput("title_panel"),
             div(h4(uiOutput("table_title"))),
             br(),
-              div(style = 'overflow-y:scroll;height:55vh;',
-                  withSpinner(
-                    DT::dataTableOutput("table_ms", height = 'auto') ,
-                    type = 1,
-                    size = 2,
-                    color = "#5977BA"
-                )
-              )
+            div(style = 'overflow-y:scroll;height:55vh;',
+                withSpinner(
+                  DT::dataTableOutput("table_ms", height = 'auto') ,
+                  type = 1,
+                  size = 2,
+                  color = "#5977BA"
+              ),
+              htmlOutput(outputId = "clinAccessTissues")
+            ),
           ),
           tabPanel(
             title = "FAQ",
-            div(style = 'overflow-y:scroll;height:55vh;',
-                faq::faq(data = faq, elementId = "faq", faqtitle = "Frequently Asked Questions", height = 'auto')
+            div(
+              includeHTML("faq.html")
             )
           )
         )

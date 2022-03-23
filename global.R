@@ -16,4 +16,3 @@ con <- dbConnect(RPostgres::Postgres(),
 )
 
 steps <- fread("help.csv")
-faq <- fread("faq.csv")

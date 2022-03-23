@@ -132,7 +132,7 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                   MS.gtex_sample_count + MS.sra_sample_count AS sample_count,
                                   CASE WHEN tms1.tissue_id IS NOT NULL THEN 'B, ' ELSE '' END ||
                                   CASE WHEN tms2.tissue_id IS NOT NULL THEN 'F, ' ELSE '' END ||
-                                  CASE WHEN tms3.tissue_id IS NOT NULL THEN 'LCL, ' ELSE '' END ||
+                                  CASE WHEN tms3.tissue_id IS NOT NULL THEN 'L, ' ELSE '' END ||
                                   CASE WHEN tms4.tissue_id IS NOT NULL THEN 'M, ' ELSE '' END AS clin_access_tissues,
                                   RME.chromosome AS chr,
                                   RME.donor_pos,

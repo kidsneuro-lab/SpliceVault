@@ -3,14 +3,14 @@
 ui <- dashboardPage(
   
   skin = "black",
-  title = "SpliceVault",
+  title = "SpliceVault-40K",
   
   # HEADER ------------------------------------------------------------------
   
   dashboardHeader(
     
-    title = span(img(src = "lariat.svg", height = 35), "SpliceVault"),
-    titleWidth = 300,
+    title = span(img(src = "lariat.svg", height = 35), "SpliceVault-40K"),
+    titleWidth = 400,
     dropdownMenu(
       type = "notifications", 
       headerText = strong("Help"), 
@@ -36,21 +36,13 @@ ui <- dashboardPage(
     width = 300,
     collapsed = TRUE,
     sidebarMenu(h4("Customise Settings", align = "center"),
-      # menuItem(
-      #   "Settings",
-      #   tabName = "settings",
-      #   icon = icon("sliders-h"),
         sliderInput("eventsNoInput", "Number of Events:",
                     min = 1, max = 10,
                     value = 4, step = 1),
         checkboxInput("allevents", "Show all Events", value = FALSE),
-        sliderInput("esInput", "Maximum Number of Exons Skipped:",
-                    min = 1, max = 10,
-                    value = 2, step = 1),
-        checkboxInput("allskips", "Show all Exon Skipping", value = FALSE),
         sliderInput("cssInput", "Show Cryptics Within:",
                     min = 50, max = 1000,
-                    value = 600, step = 100,
+                    value = 250, step = 50,
                     pre = "+/-", post= ' nt'),
         checkboxInput("allcryptics", "Show all Cryptics", value = FALSE),
         br(),
@@ -109,13 +101,6 @@ ui <- dashboardPage(
                      label = "Gene Name:",
                      choices = NULL,
                      multiple = FALSE
-                   ),
-                   radioButtons(
-                     inputId = "dbInput",
-                     label = "",
-                     choices = c('300K-RNA (hg38)','40K-RNA (hg19)'),
-                     selected = '300K-RNA (hg38)',
-                     inline = TRUE
                    )
             ),
             column(3, 
@@ -136,22 +121,10 @@ ui <- dashboardPage(
             column(3, offset = 0, 
                    selectizeInput(
                      inputId = "exonInput",
-                     label = "Exon:",
+                     label = "Donor:",
                      choices = NULL,
                      multiple = FALSE
-                   ),
-                   column(8, radioButtons(
-                     inputId = "ssTypeInput",
-                     label = "",
-                     choices = c('Acceptor', 'Donor'),
-                     selected = 'Acceptor',
-                     inline = TRUE
-                   )),
-                   column(4,
-                   tags$img(src = "exon.svg", height = "35px", style ="position:absolute; top:7px;")),
-                   bsTooltip("ssTypeInput",
-                             "The donor at the 3&apos; end of the exon or the acceptor at the 5&apos; end of the exon",
-                             placement = "bottom", trigger = "hover")
+                   )
             ),
             column(3,
                    bsButton(inputId = "confirm", 

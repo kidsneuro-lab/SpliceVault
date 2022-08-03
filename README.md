@@ -1,16 +1,14 @@
-# SpliceVault
+# SpliceVault-40K
 
-SpliceVault is a web portal to access 300K-RNA (hg38) and 40K-RNA (hg19), which quantifies natural variation in splicing and potently predicts the nature of variant-associated mis-splicing. Users require no bioinformatics expertise and can retrieve stochastic mis-splicing events for any splice-junction annotated in Ensembl or RefSeq.
+SpliceVault-40K is a web portal to access 40K-RNA (hg19), which quantifies natural variation in splicing and potently predicts the nature of variant-associated mis-splicing. Users require no bioinformatics expertise and can retrieve stochastic mis-splicing events for any splice-junction annotated in Ensembl or RefSeq.
 
-Default settings display 300K-RNA Top-4 output according to the optimised parameters we describe herein, with the option to customise the number of events returned, distance scanned for cryptic splice-sites, and maximum number of exons skipped.
+Default settings display 40K-RNA Top-4 output according to the optimised parameters we describe herein, with the option to customise the number of events returned, and distance scanned for cryptic splice-sites.
 
-Our recommendation for application of PVS1 for essential splice-site variants is theorized consideration of the 300K-RNA Top-4: a feasible, evidence-based method to reliably assess for probable cryptic activation within a larger distance window of 600 nt.
-
-We highly recommend reading ***Dawes et al. 2021 SpliceVault: predicting the precise nature of variant-associated mis-splicing*** to gain a better understanding of the data and stats behind SpliceVault.
+We highly recommend reading ***Dawes et al. 2022 Empirical prediction of variant-activated cryptic splice donors using population-based RNA-Seq data*** to gain a better understanding of the data and stats behind SpliceVault-40K.
 
 ## Online portal
 
-SpliceVault is hosted at https://kidsneuro.shinyapps.io/splicevault/
+SpliceVault-40K is hosted at https://kidsneuro.shinyapps.io/splicevault/
 
 ## What was this developed on
 * R 4.1+

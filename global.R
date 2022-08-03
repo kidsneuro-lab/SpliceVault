@@ -22,18 +22,5 @@ gene_names_40k_refseq <- dbGetQuery(con,
                             ORDER BY gene_name")
 gene_names_40k_refseq <- gene_names_40k_refseq$gene_name
 
-
-gene_names_300k_ensembl <- dbGetQuery(con,
-                                      "SELECT DISTINCT gene_name FROM misspl_app.misspl_events_300k_hg38_tx
-                            WHERE transcript_type='ensembl'
-                            ORDER BY gene_name")
-gene_names_300k_ensembl <- gene_names_300k_ensembl$gene_name
-
-gene_names_300k_refseq <- dbGetQuery(con,
-                                     "SELECT DISTINCT gene_name FROM misspl_app.misspl_events_300k_hg38_tx
-                                             WHERE transcript_type='refseq'
-                            ORDER BY gene_name")
-gene_names_300k_refseq <- gene_names_300k_refseq$gene_name
-
 steps <- fread("help.csv")
 faq <- fread("faq.csv")

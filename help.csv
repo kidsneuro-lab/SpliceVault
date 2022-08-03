@@ -1,4 +1,4 @@
 step,text
-1,"Select splice site of interest using Gene Name, Transcript and Exon selectors."
-2,Customise settings: choose how many and what type of mis-splicing events you want to display.
+1,"Select donor of interest using Gene Name, Transcript and Exon selectors."
+2,Customise settings: choose how many cryptic mis-splicing events you want to display.
 3,More questions? See FAQ

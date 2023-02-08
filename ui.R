@@ -72,7 +72,7 @@ ui <- dashboardPage(
         type = "text/css", 
         href = "krna_style.css"),
       tags$link(rel = "shortcut icon", href = "favicon.svg"),
-      includeHTML("google-analytics-dev.html") 
+      includeHTML("google-analytics.html") 
     ),
     
     useShinyjs(),

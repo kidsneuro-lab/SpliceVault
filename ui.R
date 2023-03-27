@@ -102,8 +102,11 @@ ui <- dashboardPage(
         rel = "stylesheet", 
         type = "text/css", 
         href = "krna_style.css"),
-      tags$link(rel = "shortcut icon", href = "favicon.svg"),
-      includeHTML("google-analytics-dev.html") 
+      tags$link(rel = "shortcut icon", href = "favicon.svg")#,
+      #TODO check which environment is active and then include or exclude
+      #the google analytics dev html
+      
+      #includeHTML("google-analytics-dev.html") 
     ),
     
     useShinyjs(),
@@ -111,80 +114,93 @@ ui <- dashboardPage(
     
     # MAIN BODY ---------------------------------------------------------------
     
-    
-    
-    column(
-      width = 12,
+    fluidRow(
+      column(
+        width = 9,
+      wellPanel(style = "background-color: #ffffff;",
+        tabsetPanel(
+                id = "mode",
+                tabPanel("Variant",
+                         br(),
+                         div(style="display: inline-block; vertical-align:top; width: 100%;",
+                             textInput(
+                               inputId = "variant",
+                               label = "Variant:",
+                               value = "NM_004006.3(DMD):c.4845+1G>T"
+                             ),
+                         ),
+                         br()
+                ),
+                tabPanel("Gene/Transcript/Exon",
+                         br(),
+                         div(style="display: inline-block; vertical-align:top; width: 33%;",
+                                      selectizeInput(
+                                        inputId = "geneInput",
+                                        label = "Gene Name:",
+                                        choices = NULL,
+                                        multiple = FALSE
+                                      ),
+                                      radioButtons(
+                                        inputId = "dbInput",
+                                        label = "",
+                                        choices = c('300K-RNA (hg38)','40K-RNA (hg19)'),
+                                        selected = '300K-RNA (hg38)',
+                                        inline = TRUE
+                                      ),
+                           ),
+                           div(style="display: inline-block; vertical-align:top; width: 33%;",
+                               selectizeInput(
+                                 inputId = "txInput",
+                                 label = "Transcript:",
+                                 choices = NULL,
+                                 multiple = FALSE
+                               ),
+                               radioButtons(
+                                 inputId = "txTypeInput",
+                                 label = "",
+                                 choices = c('RefSeq', 'Ensembl'),
+                                 selected = 'RefSeq',
+                                 inline = TRUE
+                               ),
+                           ),
+                           div(style="display: inline-block; vertical-align:top; width: 33%;",
+                               selectizeInput(
+                                 inputId = "exonInput",
+                                 label = "Exon:",
+                                 choices = NULL,
+                                 multiple = FALSE
+                               ),
+                               fluidRow(
+                               column(6,
+                               radioButtons(
+                                 inputId = "ssTypeInput",
+                                 label = "",
+                                 choices = c('Acceptor', 'Donor'),
+                                 selected = 'Acceptor',
+                                 inline = TRUE
+                               ),
+                               bsTooltip("ssTypeInput",
+                                         "The donor at the 3&apos; end of the exon or the acceptor at the 5&apos; end of the exon",
+                                         placement = "bottom", trigger = "hover")
+                               ),
+                               column(6,
+                                      tags$img(src = "exon.svg", height = "35px")
+                               )),
+                           ),
+                         br()
+                )),
+      )),
       
-      div(
-        style = "position: relative;width:100%",
-        box(
-          width = 'auto',
-          height = 'auto',
-          fluidRow(
-            # menuItem(
-            #   "Splice Site",
-            #   tabName = "spliceSite",
-            #   icon = icon("dna"),
-            column(3, 
-                   selectizeInput(
-                     inputId = "geneInput",
-                     label = "Gene Name:",
-                     choices = NULL,
-                     multiple = FALSE
-                   ),
-                   radioButtons(
-                     inputId = "dbInput",
-                     label = "",
-                     choices = c('300K-RNA (hg38)','40K-RNA (hg19)'),
-                     selected = '300K-RNA (hg38)',
-                     inline = TRUE
-                   )
-            ),
-            column(3, 
-                   selectizeInput(
-                     inputId = "txInput",
-                     label = "Transcript:",
-                     choices = NULL,
-                     multiple = FALSE
-                   ),
-                   radioButtons(
-                     inputId = "txTypeInput",
-                     label = "",
-                     choices = c('RefSeq', 'Ensembl'),
-                     selected = 'RefSeq',
-                     inline = TRUE
-                   )
-            ),
-            column(3, offset = 0, 
-                   selectizeInput(
-                     inputId = "exonInput",
-                     label = "Exon:",
-                     choices = NULL,
-                     multiple = FALSE
-                   ),
-                   column(8, radioButtons(
-                     inputId = "ssTypeInput",
-                     label = "",
-                     choices = c('Acceptor', 'Donor'),
-                     selected = 'Acceptor',
-                     inline = TRUE
-                   )),
-                   column(4,
-                   tags$img(src = "exon.svg", height = "35px", style ="position:absolute; top:7px;")),
-                   bsTooltip("ssTypeInput",
-                             "The donor at the 3&apos; end of the exon or the acceptor at the 5&apos; end of the exon",
-                             placement = "bottom", trigger = "hover")
-            ),
-            column(3,
-                   bsButton(inputId = "confirm", 
-                            label = "Generate Table", 
-                            icon = icon("play-circle"), 
-                            style = "default")
-            )
-          )
-        )
-      ),
+      column(
+        width = 3,
+        br(), 
+        bsButton(inputId = "confirm",
+                  label = "Generate Table",
+                  icon = icon("play-circle")),
+        br(),
+        br()
+      )
+),
       div(
         style = "position: relative;width:100%",
         tabBox(
@@ -214,7 +230,4 @@ ui <- dashboardPage(
         )
       )
     )
-    
-    
-  )
 )

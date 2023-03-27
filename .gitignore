@@ -9,3 +9,4 @@ rsconnect/*
 
 # Ignore DB credentials
 config.yml
+config.yaml

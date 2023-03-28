@@ -30,7 +30,7 @@ ui <- dashboardPage(
       ),
       notificationItem(
         text = steps$text[2],
-        icon = icon("bars")
+        icon = icon("cog")
       ),
       notificationItem(
         text = steps$text[3],
@@ -42,7 +42,7 @@ ui <- dashboardPage(
   
   dashboardSidebar(
     width = 300,
-    collapsed = TRUE,
+    collapsed = FALSE,
     sidebarMenu(h4("Customise Settings", align = "center"),
       # menuItem(
       #   "Settings",

@@ -206,6 +206,7 @@ server <- function(input, output, session) {
   output$title_panel <- renderText({
     "Mis-Splicing Events Table"
   })
+
   
   # observeEvent(input$variant, {
   #   
@@ -464,8 +465,8 @@ server <- function(input, output, session) {
             )
           ),
           text = 'Download')),
-        pageLength = 5,
-        #lengthMenu = c(seq(5, 150, 10)),
+        pageLength = if(input$allevents == FALSE){input$eventsNoInput + 1}else{20},
+        lengthMenu = c(seq(5, 10, 20)),
         ordering = FALSE,
         #scrollY="350px",
         scrollX=FALSE,

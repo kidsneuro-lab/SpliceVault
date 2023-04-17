@@ -251,7 +251,7 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
       transcript <- paste0("transcript_id=",chosen_transcript_no_ver)
     }else{
       #stop("Please enter a valid ENSEMBL or RefSeq transcript with the current transcript version number (e.g. NM_004006.4).")
-      error_text <- paste0("No transcript accession matching '",variant,"' identified. Please enter a valid ENSEMBL or RefSeq transcript (e.g. NM_004006).")
+      error_text <- paste0("No transcript accession matching '",variant,"' identified. Please enter a valid ENSEMBL or RefSeq transcript (e.g. NM_004006.3).")
       return(list(error_text,"error",1000,""))
     }
     
@@ -274,13 +274,13 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
         error_text <- paste0("Incorrect reference allele provided: ",supplied_ref,". ",
                         "Correct reference allele is: ", correct_ref,". ",
                         "Ensure you have selected the correct transcript. You entered: ",
-                        chosen_transcript_no_ver)
+                        chosen_transcript)
         return(list(error_text,"error",1000,""))
       }
       
       if(stringr::str_detect(content(r)$error,"Could not get a Transcript object for")){
-        error_text <- paste0("No transcript accession matching ",chosen_transcript_no_ver,
-                             " identified. Please enter a valid ENSEMBL or RefSeq transcript.(e.g. NM_004006)")
+        error_text <- paste0("No transcript accession matching ",chosen_transcript,
+                             " identified. Please enter a valid ENSEMBL or RefSeq transcript.(e.g. NM_004006.3)")
         
         return(list(error_text,"error",1000,""))
       }
@@ -362,7 +362,7 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
   }
 }
 
-get_variant_sql_codes <- get_tissues <- function(ss_type = NULL, exon_id = NULL, transcript_id = NULL) {
+get_variant_sql_codes <- function(ss_type = NULL, exon_id = NULL, transcript_id = NULL) {
   qry <- "SELECT rt.transcript_id, re.exon_id, rss.ss_id
             FROM misspl_app.ref_tx rt
             JOIN misspl_app.ref_exons re

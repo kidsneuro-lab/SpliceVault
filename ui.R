@@ -126,7 +126,7 @@ ui <- dashboardPage(
                              textInput(
                                inputId = "variant",
                                label = "Variant:",
-                               value = "NM_004006.3(DMD):c.4845+1G>T"
+                               value = ""
                              ),
                          ),
                          br()

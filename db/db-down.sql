@@ -1,0 +1,11 @@
+drop table if exists misspl_events_300k_hg38_events cascade;
+drop table if exists misspl_events_300k_hg38_tx cascade;
+drop table if exists misspl_events_40k_hg19_events cascade;
+drop table if exists misspl_events_40k_hg19_tx cascade;
+drop table if exists missplicing_stats cascade;
+drop table if exists ref_exons cascade;
+drop table if exists ref_missplicing_event cascade;
+drop table if exists ref_splice_sites cascade;
+drop table if exists ref_tissues cascade;
+drop table if exists ref_tx cascade;
+drop table if exists tissue_missplicing_stats cascade;

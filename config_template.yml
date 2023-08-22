@@ -1,0 +1,7 @@
+default:
+  db:
+    host: DB_HOST
+    port: DB_PORT
+    name: DB_DATABASE
+    username: DB_USERNAME
+    password: DB_PASSWORD

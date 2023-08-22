@@ -36,3 +36,17 @@ https://storage.googleapis.com/misspl-db-data/misspl_events_300k_hg38.sql.gz
 https://storage.googleapis.com/misspl-db-data/misspl_events_40k_hg19.sql.gz
 
 The files are stored in google storage and are set to 'requester pays'. Please ensure you have a billing project.
+
+# Configuration
+- The following configuration file needs to be present
+- It must be named `config.yml`
+```yml
+default:
+  db:
+    host: XXXXXXXXXXXXXXXX
+    port: XXXXXXXXXXXXXXXX
+    name: XXXXXXXXXXXXXXXX
+    username: XXXXXXXXXXXXXXXX
+    password: XXXXXXXXXXXXXXXX
+```
+

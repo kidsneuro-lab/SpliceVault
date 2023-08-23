@@ -51,7 +51,7 @@ echo "GRANT ALL PRIVILEGES ON DATABASE ${DB_DATABASE} to ${DB_USERNAME};" | dock
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
   postgres psql
 
-FILES=( "ref_exons" ) 
+FILES=( "ref_tx" "ref_exons" ) 
 
 echo "Configured with host $DB_HOST database $DB_MASTER_USERNAME and user $DB_MASTER_PASSWORD"
 
@@ -87,7 +87,7 @@ for index in ${!FILES[*]}; do
   echo "Importing $FILE"
   
   docker run --rm --network host -v /$(pwd)/:/data -e PGPASSWORD=$DB_MASTER_PASSWORD postgres:15-alpine psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME \
-      -c "\copy $FILE FROM '/data/$FILE.csv' CSV HEADER;"
+      -c "\copy $FILE FROM '/data/$FILE.csv' CSV;"
 
   echo "Imported $FILE"
 done

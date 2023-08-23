@@ -23,9 +23,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_DEPLOYMENT_SECRET }}
 
       - name: Download Files
+        working-directory: deploy/aws/db
         run: aws s3 sync --no-progress s3://$AWS_S3_BUCKET_NAME .
         env:
           AWS_S3_BUCKET_NAME: ${{ vars.AWS_S3_BUCKET_NAME }}
 
-      - name: Upload reference data
+      - name: Upload data
+        working-directory: deploy/aws/db
         run: ./db-create.sh prod 

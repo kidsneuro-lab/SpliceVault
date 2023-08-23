@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Country:
+    Type: String
+    AllowedValues:
+      - au
+      - us
+  Env:
+    Type: String
+    AllowedValues:
+      - dev
+      - test
+      - prod
+  App:
+    Type: String
+  ContainerServicePower:
+    Type: String
+    AllowedValues:
+      - nano
+      - micro
+      - small
+      - medium
+      - large
+
+Resources:
+
+  ContainerService:
+    Type: AWS::Lightsail::Container
+    Properties:
+      Power: !Ref ContainerServicePower
+      Scale: 1
+      ServiceName: !Join [ "-", [ !Ref Country, !Ref Env, !Ref App, "containers" ] ]
+      
+  RuntimeUser:
+    Type: "AWS::IAM::User"
+    Properties:
+      UserName: !Join [ "_", [ "global", !Ref Env, !Ref App, "user", "runtime" ] ]
+  
+  RuntimeUserKeys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref RuntimeUser
+
+  RuntimePolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: RuntimePolicy
+      Users:
+        - !Ref RuntimeUser
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:DescribeLogGroups"
+            Resource: "arn:aws:logs:*:*:log-group:*"
+          - Effect: Allow
+            Action:
+              - "logs:PutLogEvents"
+            Resource: "arn:aws:logs:*:*:log-group:*:log-stream:*"
+          - Effect: Allow
+            Action:
+              - "cloudwatch:PutMetricData"
+            Resource: "*"
+
+  DeploymentUser:
+    Type: "AWS::IAM::User"
+    Properties:
+      UserName: !Join [ "_", [ "global", !Ref Env, !Ref App, "user", "deployment" ] ]
+
+  DeploymentUserKeys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref DeploymentUser
+
+  DeploymentPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: DeploymentPolicy
+      Users:
+        - !Ref DeploymentUser
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - "lightsail:CreateContainerServiceRegistryLogin"
+              - "lightsail:GetContainerImages"
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - "lightsail:RegisterContainerImage"
+              - "lightsail:CreateContainerServiceDeployment"
+            Resource: "*"
+
+Outputs:
+  AwsRuntimeKey:
+    Value: !Ref RuntimeUserKeys
+  AwsRuntimeSecret:
+    Value: !GetAtt RuntimeUserKeys.SecretAccessKey
+  AwsDeploymentKey:
+    Value: !Ref DeploymentUserKeys
+  AwsDeploymentSecret:
+    Value: !GetAtt DeploymentUserKeys.SecretAccessKey
+  ContainerServiceName:
+    Value: !Ref ContainerService

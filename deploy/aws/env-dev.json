@@ -1,0 +1,18 @@
+[
+    {
+        "ParameterKey":"Country",
+        "ParameterValue":"au"
+    },
+    {
+        "ParameterKey":"Env",
+        "ParameterValue":"dev"
+    },
+    {
+        "ParameterKey":"App",
+        "ParameterValue":"splicevault"
+    },
+    {
+        "ParameterKey":"ContainerServicePower",
+        "ParameterValue":"small"
+    }
+]

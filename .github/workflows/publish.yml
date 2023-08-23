@@ -1,0 +1,92 @@
+name: publish
+
+on:
+  push:
+    branches: ['master']
+
+env:
+  IMAGE_NAME: splicevault
+
+jobs:
+  
+  deploy_to_dev:
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Generate config file
+        run: cat config_template.yml | envsubst > config.yml
+        env:
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_DATABASE: ${{ vars.DB_DATABASE }}
+          DB_USERNAME: ${{ vars.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ vars.DB_PORT }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Install AWS Lightsail
+        run: |
+          curl "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o "lightsailctl"
+          sudo mv "lightsailctl" "/usr/local/bin/lightsailctl"
+          sudo chmod +x /usr/local/bin/lightsailctl
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ vars.AWS_DEPLOYMENT_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_DEPLOYMENT_SECRET }}
+          
+      - name: Push Docker Image
+        run: |
+          aws lightsail push-container-image \
+            --service-name ${{ vars.AWS_CONTAINER_SERVICE_NAME }} \
+            --label ${{ env.IMAGE_NAME }} \
+            --image ${{ env.IMAGE_NAME }}:latest
+            
+      - name: Get Docker Image Version Number
+        run: |
+          echo "IMAGE=$(aws lightsail get-container-images --service-name ${{ vars.AWS_CONTAINER_SERVICE_NAME }} | jq -r '.containerImages | map(select(.image | contains (".splicevault") )) | .[0].image')" >> $GITHUB_ENV
+          echo "Build Docker Image version $IMAGE" >> $GITHUB_STEP_SUMMARY
+
+      - name: Generate containers.json file
+        working-directory: deploy/lightsail/
+        run: cat template_dev.json | envsubst > containers.json
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ vars.AWS_RUNTIME_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_RUNTIME_SECRET }}
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_DATABASE: ${{ vars.DB_DATABASE }}
+          DB_USERNAME: ${{ vars.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+      - name: Deploy to AWS Lightsail
+        working-directory: deploy/lightsail/
+        run: |
+          aws lightsail create-container-service-deployment \
+            --service-name ${{ vars.AWS_CONTAINER_SERVICE_NAME }} \
+            --containers file://containers.json \
+            --public-endpoint file://endpoints.json

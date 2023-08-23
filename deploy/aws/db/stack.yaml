@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Country:
+    Type: String
+    AllowedValues:
+      - au
+      - us
+  Env:
+    Type: String
+    AllowedValues:
+      - dev
+      - test
+      - prod
+  App:
+    Type: String
+  DbPassword:
+    NoEcho: true
+    Type: String
+    MinLength: 10
+    MaxLength: 40
+    AllowedPattern: ^[a-zA-Z0-9]*$
+
+Resources:
+      
+  Database:
+    Type: AWS::Lightsail::Database
+    Properties:
+      RelationalDatabaseBlueprintId: postgres_15
+      RelationalDatabaseBundleId: large_2_0
+      RelationalDatabaseName: !Join [ "_", [ !Ref Country, !Ref Env, !Ref App, "database" ] ]
+      AvailabilityZone: !Select [ 0, Fn::GetAZs: !Ref "AWS::Region" ]
+      BackupRetention: true
+      MasterDatabaseName: !Join [ "_", [ !Ref Country, !Ref Env, !Ref App, "db" ] ]
+      MasterUsername: !Join [ "_", [ !Ref Country, !Ref Env, !Ref App, "user" ] ]
+      MasterUserPassword: !Ref DbPassword
+
+Outputs:
+  MasterDatabaseName:
+    Value: !Join [ "_", [ !Ref Country, !Ref Env, !Ref App, "db" ] ]
+  MasterUsername:
+    Value: !Join [ "_", [ !Ref Country, !Ref Env, !Ref App, "user" ] ]
+  MasterUserPassword:
+    Value: !Ref DbPassword

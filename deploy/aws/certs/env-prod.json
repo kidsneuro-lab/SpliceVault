@@ -1,0 +1,10 @@
+[
+    {
+        "ParameterKey":"CertificateName",
+        "ParameterValue":"splicevault.frontiergenomics.com.au"
+    },
+    {
+        "ParameterKey":"DomainName",
+        "ParameterValue":"splicevault.frontiergenomics.com.au"
+    }
+]

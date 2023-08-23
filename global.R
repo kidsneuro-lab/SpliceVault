@@ -1,18 +1,32 @@
 source('dependencies.R')
-
-flog.threshold("INFO")
+flog.appender(appender.file("/var/log/shiny-server/splicevault.log"))
+flog.threshold("TRACE")
 layout <- layout.format('[~l] [~t] [~n.~f] ~m')
 flog.layout(layout)
 
-# DATA TRANSFORMATION AND NEW VARIABLES -----------------------------------
-#Sys.setenv(R_CONFIG_ACTIVE = "local")
-conn_args <- config::get("dataconnection")
+db <- config::get("db")
+db_host <- db$host
+db_name <- db$name
+db_username <- db$username
+db_password <- db$password
+db_port <- db$port
+
+flog.info("--------------------")
+flog.info("Configuration:")
+flog.info("--------------------")
+flog.info("db_host %s", db_host)
+flog.info("db_name %s", db_name)
+flog.info("db_username %s", db_username)
+flog.info("db_password %s", db_password)
+flog.info("db_port %s", db_port)
+flog.info("--------------------")
+
 con <- dbConnect(RPostgres::Postgres(),
-                 dbname = conn_args$dbname,
-                 host = conn_args$host,
-                 port = conn_args$port,
-                 user = conn_args$user,
-                 password = conn_args$password
+                 dbname = db_name,
+                 host = db_host,
+                 port = db_port,
+                 user = db_username,
+                 password = db_password
 )
 
 steps <- fread("help.csv")

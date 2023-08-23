@@ -1,0 +1,8 @@
+{
+    "containerName": "splicevault",
+    "containerPort": 3838,
+    "healthCheck": {
+      "path": "/",
+      "successCodes": "200"
+    }
+  }

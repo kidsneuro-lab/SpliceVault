@@ -1,9 +1,9 @@
 #!/bin/bash
 ########################################
 # Usage 
-# ./setup.sh dev
-# ./setup.sh test
-# ./setup.sh prod
+# ./setup_environment.sh dev
+# ./setup_environment.sh test
+# ./setup_environment.sh prod
 ########################################
 
 # exit when any command fails
@@ -15,11 +15,11 @@ then
   echo "Please provide the environment parameter."
   exit 1
 fi
-
+COUNTRY="au"
 ENV="$1"
 REPO='kidsneuro-lab/splicevault'
 APP="splicevault"
-STACK_NAME="au-${ENV}-${APP}"
+STACK_NAME="${COUNTRY}-${ENV}-${APP}"
 
 ENV_AWS_REGION="$(aws configure get region --output text)"
 ENV_AWS_DEPLOYMENT_KEY=$(aws cloudformation describe-stacks             --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`AwsDeploymentKey`].OutputValue' --output text)
@@ -27,6 +27,14 @@ ENV_AWS_DEPLOYMENT_SECRET=$(aws cloudformation describe-stacks          --stack-
 ENV_AWS_RUNTIME_KEY=$(aws cloudformation describe-stacks                --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`AwsRuntimeKey`].OutputValue' --output text)
 ENV_AWS_RUNTIME_SECRET=$(aws cloudformation describe-stacks             --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`AwsRuntimeSecret`].OutputValue' --output text)
 ENV_AWS_CONTAINER_SERVICE_NAME=$(aws cloudformation describe-stacks     --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`ContainerServiceName`].OutputValue' --output text)
+
+# ALL INSTANCES SHARE THE SAME PROD DATABASE
+SHARED_ENV="prod"
+DB_INSTANCE_NAME="${COUNTRY}_${SHARED_ENV}_${APP}_database"   
+ENV_DB_HOST=$(aws lightsail get-relational-database     --relational-database-name $DB_INSTANCE_NAME  --query 'relationalDatabase.masterEndpoint.address' --output text)
+ENV_DB_DATABASE="${COUNTRY}_${SHARED_ENV}_${APP}"
+ENV_DB_USERNAME="${COUNTRY}_${SHARED_ENV}_${APP}"
+ENV_DB_PASSWORD="${COUNTRY}_${SHARED_ENV}_${APP}"
 
 echo "Values..."
 echo "AWS_REGION = $ENV_AWS_REGION"

@@ -61,6 +61,13 @@ cat ./db-down.sql | docker run --rm --network host -i -e PGPASSWORD=$DB_MASTER_P
 echo "Creating database schema"
 cat ./db-up.sql   | docker run --rm --network host -i -e PGPASSWORD=$DB_MASTER_PASSWORD postgres:15-alpine psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME
 
+echo "Granting select on all tables in database ${DB_DATABASE} to user ${DB_USERNAME}..."
+echo "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USERNAME};" | docker run -i --rm \
+  -e PGHOST=$DB_HOST \
+  -e PGDATABASE=$DB_DATABASE \
+  -e PGUSER=$DB_MASTER_USERNAME \
+  -e PGPASSWORD=$DB_MASTER_PASSWORD \
+  postgres psql
 
 for index in ${!FILES[*]}; do
   FILE=${FILES[$index]}

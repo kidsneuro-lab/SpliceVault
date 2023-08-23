@@ -2,7 +2,7 @@
     "splicevault": {
       "image": "$IMAGE",
       "ports": {
-        "80": "HTTP"
+        "3838": "HTTP"
       },
       "environment": {
         "AWS_REGION": "$AWS_REGION",

@@ -5,7 +5,7 @@
     },
     {
         "ParameterKey":"Env",
-        "ParameterValue":"prod"
+        "ParameterValue":"dev"
     },
     {
         "ParameterKey":"App",
@@ -14,5 +14,13 @@
     {
         "ParameterKey":"ContainerServicePower",
         "ParameterValue":"small"
-    }
+    },
+    {
+        "ParameterKey":"CertificateName",
+        "ParameterValue":"dev-splicevault.frontiergenomics.com.au"
+    },
+    {
+        "ParameterKey":"DomainName",
+        "ParameterValue":"dev-splicevault.frontiergenomics.com.au"
+    }   
 ]

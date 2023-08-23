@@ -22,6 +22,10 @@ Parameters:
       - small
       - medium
       - large
+  DomainName:
+    Type: String
+  CertificateName:
+    Type: String
 
 Resources:
 
@@ -31,6 +35,10 @@ Resources:
       Power: !Ref ContainerServicePower
       Scale: 1
       ServiceName: !Join [ "-", [ !Ref Country, !Ref Env, !Ref App, "containers" ] ]
+      PublicDomainNames:
+        - CertificateName: !Ref CertificateName
+          DomainNames:
+            - !Ref DomainName
       
   RuntimeUser:
     Type: "AWS::IAM::User"

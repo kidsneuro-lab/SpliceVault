@@ -1,6 +1,7 @@
-name: publish
+name: deploy_to_dev
 
 on:
+  workflow_dispatch:
   push:
     branches: ['main']
 
@@ -13,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: dev
+      url: https://dev-splicevault.frontiergenomics.com.au/
     
     steps:
       - name: Checkout repository

@@ -1,7 +1,7 @@
 default:
   db:
-    host: DB_HOST
+    host: $DB_HOST
     port: 5432
-    name: DB_DATABASE
-    username: DB_USERNAME
-    password: DB_PASSWORD
+    name: $DB_DATABASE
+    username: $DB_USERNAME
+    password: $DB_PASSWORD

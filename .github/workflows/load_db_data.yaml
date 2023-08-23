@@ -1,0 +1,31 @@
+# This only runs against the production db as it is the only one that needs to be loaded with data
+# the other environments all point to the production db
+name: load_db_data
+
+on:
+  workflow_dispatch:
+jobs:
+
+  load_db_data:
+    runs-on: large_github_build_agent
+    environment:
+      name: ${{ github.event.inputs.environment_name }}
+    steps:
+    
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ vars.AWS_DEPLOYMENT_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_DEPLOYMENT_SECRET }}
+
+      - name: Download Files
+        run: aws s3 sync --no-progress s3://$AWS_S3_BUCKET_NAME .
+        env:
+          AWS_S3_BUCKET_NAME: ${{ vars.AWS_S3_BUCKET_NAME }}
+
+      - name: Upload reference data
+        run: ./db-create.sh prod 

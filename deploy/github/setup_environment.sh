@@ -27,6 +27,7 @@ ENV_AWS_DEPLOYMENT_SECRET=$(aws cloudformation describe-stacks          --stack-
 ENV_AWS_RUNTIME_KEY=$(aws cloudformation describe-stacks                --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`AwsRuntimeKey`].OutputValue' --output text)
 ENV_AWS_RUNTIME_SECRET=$(aws cloudformation describe-stacks             --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`AwsRuntimeSecret`].OutputValue' --output text)
 ENV_AWS_CONTAINER_SERVICE_NAME=$(aws cloudformation describe-stacks     --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`ContainerServiceName`].OutputValue' --output text)
+ENV_AWS_S3_BUCKET_NAME=$(aws cloudformation describe-stacks             --stack-name $STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' --output text)
 
 # ALL INSTANCES SHARE THE SAME PROD DATABASE
 SHARED_ENV="prod"
@@ -43,6 +44,7 @@ echo "AWS_DEPLOYMENT_SECRET = $ENV_AWS_DEPLOYMENT_SECRET"
 echo "AWS_RUNTIME_KEY = $ENV_AWS_RUNTIME_KEY"
 echo "AWS_RUNTIME_SECRET = $ENV_AWS_RUNTIME_SECRET"
 echo "AWS_CONTAINER_SERVICE_NAME = $ENV_AWS_CONTAINER_SERVICE_NAME"
+echo "AWS_S3_BUCKET_NAME = $ENV_AWS_S3_BUCKET_NAME"
 echo "DB_HOST = $ENV_DB_HOST"
 echo "DB_DATABASE = $ENV_DB_DATABASE"
 echo "DB_USERNAME = $ENV_DB_USERNAME"
@@ -53,6 +55,7 @@ gh variable set AWS_REGION                  --repo $REPO --env $ENV --body $ENV_
 gh variable set AWS_DEPLOYMENT_KEY          --repo $REPO --env $ENV --body $ENV_AWS_DEPLOYMENT_KEY
 gh variable set AWS_RUNTIME_KEY             --repo $REPO --env $ENV --body $ENV_AWS_RUNTIME_KEY
 gh variable set AWS_CONTAINER_SERVICE_NAME  --repo $REPO --env $ENV --body $ENV_AWS_CONTAINER_SERVICE_NAME
+gh variable set AWS_S3_BUCKET_NAME          --repo $REPO --env $ENV --body $ENV_AWS_S3_BUCKET_NAME
 gh variable set DB_HOST                     --repo $REPO --env $ENV --body $ENV_DB_HOST
 gh variable set DB_DATABASE                 --repo $REPO --env $ENV --body $ENV_DB_DATABASE
 gh variable set DB_USERNAME                 --repo $REPO --env $ENV --body $ENV_DB_USERNAME

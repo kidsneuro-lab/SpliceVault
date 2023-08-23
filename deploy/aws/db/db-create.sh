@@ -35,6 +35,14 @@ echo "DB_DATABASE = $DB_DATABASE"
 echo "DB_USERNAME = $DB_USERNAME"
 echo "DB_PASSWORD = $DB_PASSWORD"
 
+echo "Dropping database ${DB_DATABASE}..."
+echo "DROP DATABASE IF EXISTS ${DB_DATABASE} WITH (FORCE);" | docker run -i --rm \
+  -e PGHOST=$DB_HOST \
+  -e PGDATABASE=$DB_MASTER_DATABASE \
+  -e PGUSER=$DB_MASTER_USERNAME \
+  -e PGPASSWORD=$DB_MASTER_PASSWORD \
+  postgres psql
+
 echo "Creating database ${DB_DATABASE} and user ${DB_USERNAME}..."
 echo "CREATE DATABASE ${DB_DATABASE};CREATE USER ${DB_USERNAME} WITH PASSWORD '${DB_PASSWORD}';" | docker run -i --rm \
   -e PGHOST=$DB_HOST \

@@ -67,8 +67,9 @@ jobs:
             --image ${{ env.IMAGE_NAME }}:latest
             
       - name: Get Docker Image Version Number
-        run: >
+        run: |
           echo "IMAGE=$(aws lightsail get-container-images --service-name ${{ vars.AWS_CONTAINER_SERVICE_NAME }} | jq -r '.containerImages | map(select(.image | contains (".splicevault") )) | .[0].image')" >> $GITHUB_ENV
+          echo "Build Docker Image version $IMAGE" >> $GITHUB_STEP_SUMMARY
 
       - name: Generate containers.json file
         working-directory: deploy/lightsail/

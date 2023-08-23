@@ -7,7 +7,7 @@ on:
 jobs:
 
   load_db_data:
-    runs-on: large_github_build_agent
+    runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.environment_name }}
     steps:

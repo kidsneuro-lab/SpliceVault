@@ -40,6 +40,12 @@ Resources:
           DomainNames:
             - !Ref DomainName
       
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ "-", [ !Ref Country, !Ref Env, !Ref App, "storage" ] ]
+      AccessControl: Private
+
   RuntimeUser:
     Type: "AWS::IAM::User"
     Properties:
@@ -58,6 +64,16 @@ Resources:
         - !Ref RuntimeUser
       PolicyDocument:
         Statement:
+          - Effect: Allow
+            Action:
+              - "s3:PutObject"
+              - "s3:PutObjectAcl"
+              - "s3:GetObject"
+              - "s3:GetObjectAcl"
+              - "s3:AbortMultipartUpload"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListMultipartUploadParts"
+            Resource: !Sub "arn:aws:s3:::${Bucket}/*"
           - Effect: Allow
             Action:
               - "logs:CreateLogGroup"
@@ -113,3 +129,5 @@ Outputs:
     Value: !GetAtt DeploymentUserKeys.SecretAccessKey
   ContainerServiceName:
     Value: !Ref ContainerService
+  BucketName:
+    Value: !Ref Bucket

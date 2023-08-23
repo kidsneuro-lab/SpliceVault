@@ -27,7 +27,6 @@ jobs:
           DB_DATABASE: ${{ vars.DB_DATABASE }}
           DB_USERNAME: ${{ vars.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_PORT: ${{ vars.DB_PORT }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta

@@ -9,7 +9,7 @@ jobs:
   load_db_data:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.event.inputs.environment_name }}
+      name: prod
     steps:
     
       - name: Checkout code

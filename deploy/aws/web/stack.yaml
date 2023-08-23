@@ -109,29 +109,27 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - "s3:GetObject"
+              - "s3:GetObjectAcl"
               - "s3:GetBucketLocation"
               - "s3:ListBucket"
               - "s3:ListBucketMultipartUploads"
             Resource: "*"
           - Effect: Allow
             Action:
-              - "s3:GetObject"
-              - "s3:GetObjectAcl"
-            Resource: "*"
-          - Effect: Allow
-            Action:
               - "lightsail:CreateContainerServiceRegistryLogin"
-              - "lightsail:GetContainerImages"
-            Resource: "*"
-          - Effect: Allow
-            Action:
-              - "lightsail:RegisterContainerImage"
               - "lightsail:CreateContainerServiceDeployment"
+              - "lightsail:GetContainerImages"
+              - "lightsail:RegisterContainerImage"
             Resource: "*"
           - Effect: Allow
             Action:
               - "lightsail:GetRelationalDatabase"
               - "lightsail:UpdateRelationalDatabase"
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - "cloudformation:DescribeStacks"
             Resource: "*"
 
 Outputs:

@@ -51,7 +51,7 @@ echo "GRANT ALL PRIVILEGES ON DATABASE ${DB_DATABASE} to ${DB_USERNAME};" | dock
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
   postgres psql
 
-FILES=( "ref_tx" "ref_exons" ) 
+FILES=( "ref_tx" "ref_exons" "ref_tissues" "ref_splice_sites" "ref_missplicing_event" "misspl_events_300k_hg38_tx" "misspl_events_40k_hg19_tx" "misspl_events_40k_hg19_events" "misspl_events_300k_hg38_events" "missplicing_stats" "tissue_missplicing_stats" ) 
 
 echo "Configured with host $DB_HOST database $DB_MASTER_USERNAME and user $DB_MASTER_PASSWORD"
 

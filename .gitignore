@@ -9,4 +9,10 @@ rsconnect/*
 
 # Ignore DB credentials
 config.yml
+
+#Ignore Rider settings
 /.idea
+
+# Ignore csv files
+deploy/**/*.csv
+deploy/**/*.csv.gz

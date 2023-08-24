@@ -1,0 +1,35 @@
+﻿**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/.idea
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/*.exe
+**/azds.yaml
+**/bin
+**/.idea
+**/charts
+**/docker-compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+
+#Ignore Rider settings
+/.idea
+
+# Ignore csv files
+deploy/**/*.csv
+deploy/**/*.csv.gz
+
+LICENSE
+README.md

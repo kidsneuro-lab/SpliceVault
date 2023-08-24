@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  CertificateName:
+    Type: String
+  DomainName:
+    Type: String
+
+Resources:
+
+  Certificate:
+    Type: AWS::Lightsail::Certificate
+    Properties: 
+      CertificateName: !Ref CertificateName
+      DomainName: !Ref DomainName
+      

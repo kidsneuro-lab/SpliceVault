@@ -1,0 +1,18 @@
+[
+    {
+        "ParameterKey":"Country",
+        "ParameterValue":"au"
+    },
+    {
+        "ParameterKey":"Env",
+        "ParameterValue":"prod"
+    },
+    {
+        "ParameterKey":"App",
+        "ParameterValue":"splicevault"
+    },
+    {
+        "ParameterKey":"DbPassword",
+        "ParameterValue":""
+    }    
+]

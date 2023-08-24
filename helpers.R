@@ -1,7 +1,7 @@
 get_genes <- function(db, transcript_type) {
   switch (db,
           "40K-RNA (hg19)" = {
-            qry <- glue_sql("SELECT DISTINCT gene_name FROM misspl_app.misspl_events_40k_hg19_tx
+            qry <- glue_sql("SELECT DISTINCT gene_name FROM misspl_events_40k_hg19_tx
                               WHERE transcript_type = {transcript_type}
                              ORDER BY gene_name",
                             transcript_type = transcript_type,
@@ -9,7 +9,7 @@ get_genes <- function(db, transcript_type) {
           },
           "300K-RNA (hg38)" = {
             qry <- glue_sql("SELECT DISTINCT gene_name 
-                              FROM misspl_app.ref_tx 
+                              FROM ref_tx 
                               WHERE transcript_type = {transcript_type}
                             ORDER BY gene_name",
                           transcript_type = transcript_type,
@@ -25,7 +25,7 @@ get_tx <- function(db, transcript_type, gene_name) {
           "40K-RNA (hg19)" = {
             tx_query <- paste0("SELECT tx_id || CASE WHEN canonical = 1 THEN ' (Canonical)' ELSE '' END AS display_value,
                              tx_id AS id
-                             FROM misspl_app.misspl_events_40k_hg19_tx
+                             FROM misspl_events_40k_hg19_tx
                              WHERE gene_name = '",gene_name, "' 
                              AND transcript_type = '",  transcript_type, "'
                              ORDER BY canonical DESC, tx_id;")
@@ -35,7 +35,7 @@ get_tx <- function(db, transcript_type, gene_name) {
               glue_sql(
                 "SELECT tx_id || CASE WHEN canonical THEN ' (Canonical)' ELSE '' END AS display_value,
                                             transcript_id AS id
-                                       FROM misspl_app.ref_tx
+                                       FROM ref_tx
                                       WHERE transcript_type = {transcript_type} AND gene_name = {gene_name}
                                      ORDER BY canonical DESC, transcript_id;",
                 transcript_type = transcript_type,
@@ -52,8 +52,8 @@ get_exons <- function(db, transcript_id, transcript_type, ss_type) {
   switch (db,
           "40K-RNA (hg19)" = {
             ex_query <- paste0("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS id
-              FROM misspl_app.misspl_events_40k_hg19_tx tx
-              JOIN misspl_app.misspl_events_40k_hg19_events evnt
+              FROM misspl_events_40k_hg19_tx tx
+              JOIN misspl_events_40k_hg19_events evnt
               ON tx.gene_tx_id = evnt.gene_tx_id
               AND ss_type = '", ss_type, "'
               AND tx.transcript_type = '", transcript_type, "'
@@ -62,8 +62,8 @@ get_exons <- function(db, transcript_id, transcript_type, ss_type) {
           },
           "300K-RNA (hg38)" = {
             ex_query <- glue_sql("SELECT re.exon_no || ' (g.' || rss.splice_site_pos || ')' AS display_value, re.exon_id as id
-                                      FROM misspl_app.ref_exons re
-                                    JOIN misspl_app.ref_splice_sites rss
+                                      FROM ref_exons re
+                                    JOIN ref_splice_sites rss
                                       ON re.exon_id = rss.exon_id
                                       AND rss.ss_type = {ss_type}
                                      WHERE re.transcript_id = {transcript_id}
@@ -81,7 +81,7 @@ get_tissues <- function() {
   qry <- "SELECT CASE WHEN clinically_accessible THEN CASE WHEN tissue = 'Whole Blood' THEN 'Blood - Whole' ELSE tissue END || '*'
                       ELSE tissue END AS display_value, 
                  tissue_id AS id 
-            FROM misspl_app.ref_tissues rt
+            FROM ref_tissues rt
           ORDER BY clinically_accessible DESC, display_value ;"
   flog.trace(qry)
   res <- dbGetQuery(con, qry)
@@ -106,8 +106,8 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                           evnt.chr,
                                           evnt.donor_pos,
                                           evnt.acceptor_pos
-                                    FROM misspl_app.misspl_events_40k_hg19_tx tx
-                                    JOIN misspl_app.misspl_events_40k_hg19_events evnt
+                                    FROM misspl_events_40k_hg19_tx tx
+                                    JOIN misspl_events_40k_hg19_events evnt
                                     ON tx.gene_tx_id = evnt.gene_tx_id
                                     AND ss_type = '", ss_type, "'
                                     AND exon_no = ", gsub(' \\((.*?)\\)', '', exon_id),
@@ -138,31 +138,31 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                   RME.donor_pos,
                                   RME.acceptor_pos
                               FROM
-                                  misspl_app.missplicing_stats MS
-                              LEFT JOIN misspl_app.tissue_missplicing_stats tms1 ON -- Whole Blood
+                                  missplicing_stats MS
+                              LEFT JOIN tissue_missplicing_stats tms1 ON -- Whole Blood
                                   MS.misspl_stat_id = tms1.misspl_stat_id 
                                   AND tms1.event_rank <= {events_limit}
                                   AND tms1.tissue_id = 5
-                              LEFT JOIN misspl_app.tissue_missplicing_stats tms2 ON -- Fibroblasts
+                              LEFT JOIN tissue_missplicing_stats tms2 ON -- Fibroblasts
                                   MS.misspl_stat_id = tms2.misspl_stat_id 
                                   AND tms2.event_rank <= {events_limit}
                                   AND tms2.tissue_id = 4
-                              LEFT JOIN misspl_app.tissue_missplicing_stats tms3 ON -- EBV-transformed lymphocytes
+                              LEFT JOIN tissue_missplicing_stats tms3 ON -- EBV-transformed lymphocytes
                                   MS.misspl_stat_id = tms3.misspl_stat_id 
                                   AND tms3.event_rank <= {events_limit}
                                   AND tms3.tissue_id = 6
-                              LEFT JOIN misspl_app.tissue_missplicing_stats tms4 ON -- Muscle - Skeletal
+                              LEFT JOIN tissue_missplicing_stats tms4 ON -- Muscle - Skeletal
                                   MS.misspl_stat_id = tms4.misspl_stat_id 
                                   AND tms4.event_rank <= {events_limit}
                                   AND tms4.tissue_id = 30
-                              INNER JOIN misspl_app.ref_exons RE ON
+                              INNER JOIN ref_exons RE ON
                                   MS.exon_id = RE.exon_id
                                   AND RE.transcript_id = MS.transcript_id 
-                              INNER JOIN misspl_app.ref_missplicing_event RME ON
+                              INNER JOIN ref_missplicing_event RME ON
                                   MS.misspl_event_id = RME.misspl_event_id
-                              INNER JOIN misspl_app.ref_tx RT ON
+                              INNER JOIN ref_tx RT ON
                                   MS.transcript_id = RT.transcript_id
-                              INNER JOIN misspl_app.ref_splice_sites rss ON
+                              INNER JOIN ref_splice_sites rss ON
                                   MS.ss_id = rss.ss_id 
                                   AND rss.exon_id = RE.exon_id 
                               WHERE MS.transcript_id = {transcript_id}
@@ -192,19 +192,19 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                   RME.donor_pos,
                                   RME.acceptor_pos
                               FROM
-                                  misspl_app.missplicing_stats MS
-                              INNER JOIN misspl_app.ref_exons RE ON
+                                  missplicing_stats MS
+                              INNER JOIN ref_exons RE ON
                                   MS.exon_id = RE.exon_id
                                   AND RE.transcript_id = MS.transcript_id 
-                              INNER JOIN misspl_app.ref_missplicing_event RME ON
+                              INNER JOIN ref_missplicing_event RME ON
                                   MS.misspl_event_id = RME.misspl_event_id
-                              INNER JOIN misspl_app.ref_tx RT ON
+                              INNER JOIN ref_tx RT ON
                                   MS.transcript_id = RT.transcript_id
-                              INNER JOIN misspl_app.tissue_missplicing_stats TMS ON
+                              INNER JOIN tissue_missplicing_stats TMS ON
                                   MS.misspl_stat_id = TMS.misspl_stat_id
-                              INNER JOIN misspl_app.ref_tissues RT2 ON
+                              INNER JOIN ref_tissues RT2 ON
                                   TMS.tissue_id = RT2.tissue_id
-                              INNER JOIN misspl_app.ref_splice_sites rss ON
+                              INNER JOIN ref_splice_sites rss ON
                                   MS.ss_id = rss.ss_id 
                                   AND rss.exon_id = RE.exon_id 
                               WHERE RT2.tissue_id = {tissue_id}

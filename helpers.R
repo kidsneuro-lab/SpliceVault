@@ -229,3 +229,157 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
   set_table <- dbGetQuery(con, table_query)
   return(set_table)
 }
+
+get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
+  
+  #TODO add code to activate this when generate table is pressed and variant input selected
+  
+  if(mode == "Variant"){
+    message(variant)
+    refseq_transcript <- stringr::str_extract_all(variant, "NM_[0-9]+\\.[0-9]+")[[1]][1]
+    ensembl_transcript <- stringr::str_extract_all(variant, "ENST[0-9]+\\.[0-9]+")[[1]][1]
+    server <- "https://rest.ensembl.org"
+    
+    if(!is.na(refseq_transcript)){
+      chosen_transcript <- refseq_transcript
+      chosen_transcript_no_ver <- stringr::str_extract_all(chosen_transcript, "NM_[0-9]+")[[1]][1]
+      variant <- stringr::str_replace(variant,chosen_transcript,chosen_transcript_no_ver)
+      transcript <- "refseq=1"
+    }else if(!is.na(ensembl_transcript)){
+      chosen_transcript <- ensembl_transcript
+      chosen_transcript_no_ver <- stringr::str_split(chosen_transcript, "\\.")[[1]][1]
+      transcript <- paste0("transcript_id=",chosen_transcript_no_ver)
+    }else{
+      #stop("Please enter a valid ENSEMBL or RefSeq transcript with the current transcript version number (e.g. NM_004006.4).")
+      error_text <- paste0("No transcript accession matching '",variant,"' identified. Please enter a valid ENSEMBL or RefSeq transcript (e.g. NM_004006.3).")
+      return(list(error_text,"error",1000,""))
+    }
+    
+    ext <- paste0("/vep/human/hgvs/",variant,"?")
+    
+    call <- paste0(server,
+                   ext,
+                   "content-type=application/json",
+                   "&numbers=1&",transcript)
+    
+    message(call)
+    
+    r <- GET(call)
+    
+    if(length(content(r)$error) > 0){
+      
+      if(stringr::str_detect(content(r)$error,"does not match reference allele")){
+        correct_ref <- stringr::str_extract_all(content(r)$error,"\\([A,C,G,T]\\)")[[1]][1]
+        supplied_ref <- stringr::str_extract_all(content(r)$error,"\\([A,C,G,T]\\)")[[1]][2]
+        error_text <- paste0("Incorrect reference allele provided: ",supplied_ref,". ",
+                        "Correct reference allele is: ", correct_ref,". ",
+                        "Ensure you have selected the correct transcript. You entered: ",
+                        chosen_transcript)
+        return(list(error_text,"error",1000,""))
+      }
+      
+      if(stringr::str_detect(content(r)$error,"Could not get a Transcript object for")){
+        error_text <- paste0("No transcript accession matching ",chosen_transcript,
+                             " identified. Please enter a valid ENSEMBL or RefSeq transcript.(e.g. NM_004006.3)")
+        
+        return(list(error_text,"error",1000,""))
+      }
+      
+      if(stringr::str_detect(content(r)$error,"Unable to map the cDNA coordinates")){
+        error_text <- paste0("Unable to map the cDNA coordinates for '",chosen_transcript_no_ver,
+                             "' Please double check your input.")
+        
+        return(list(error_text,"error",1000,""))
+      } else {
+        error_text <- paste0("An unknown error occurred. Please double check your input: '",variant,"'.")
+        
+        return(list(error_text,"error",1000,""))
+      }
+      
+    }
+    
+    #stop_for_status(r)
+    
+    message(content(r))
+
+    #gene, transcript, exon, strand, splicesite
+    
+    for(i in seq(1,length(content(r)[[1]]$transcript_consequences))){
+      if(!is.na(stringr::str_extract_all(content(r)[[1]]$transcript_consequences[[i]]$transcript_id,
+                                         chosen_transcript_no_ver)[[1]][1])){
+        api_data <- content(r)[[1]]$transcript_consequences[[i]]
+      }
+    }
+    
+    gene <- api_data$gene_symbol
+    
+    transcript <- stringr::str_split(chosen_transcript,"\\.")[[1]][1]
+    
+    message(variant)
+    
+    if(is.na(stringr::str_match(variant, pattern = "\\+|\\-"))){
+      exon <- stringr::str_split(api_data$exon,"\\/")[[1]][1]
+      var_pos <- content(r)[[1]]$start
+
+      qry <- "SELECT ev.ss_type, ev.splice_site_pos, ev.exon_no, ev.gene_tx_id, tx.tx_id
+                FROM misspl_app.misspl_events_300k_hg38_events ev
+              JOIN misspl_app.misspl_events_300k_hg38_tx tx
+                ON ev.gene_tx_id = tx.gene_tx_id
+                WHERE splicing_event_class = 'normal splicing'
+                AND exon_no = {exon_id}
+                AND tx_id = {transcript};"
+      
+      flog.trace(qry)
+      
+      table_query <- glue_sql(qry,
+                              transcript_id = transcript,
+                              exon_id = exon,
+                              .con = con)
+      
+      res <- dbGetQuery(con, table_query)
+      
+      res <- as.data.table(res)
+      
+      res$diff <- res$splice_site_pos - var_pos
+      
+      splicesite_raw <- res[,ss_type,diff][order(abs(diff))][[1,2]]
+      
+      splicesite <- str_to_title(splicesite_raw)
+      
+    }else{
+      if(!is.na(stringr::str_match(variant, pattern = "\\+"))){
+        exon <- stringr::str_split(api_data$intron,"\\/")[[1]][1]
+        splicesite <- "Donor"
+      }else if(!is.na(stringr::str_match(variant, pattern = "\\-"))){
+        exon <- as.numeric(stringr::str_split(api_data$intron,"\\/")[[1]][1])+1
+        splicesite <- "Acceptor"
+      }
+    }
+    
+    message(splicesite)
+    
+    list(gene, transcript, exon, splicesite)
+  }
+}
+
+get_variant_sql_codes <- function(ss_type = NULL, exon_id = NULL, transcript_id = NULL) {
+  qry <- "SELECT rt.transcript_id, re.exon_id, rss.ss_id
+            FROM misspl_app.ref_tx rt
+            JOIN misspl_app.ref_exons re
+              ON rt.transcript_id = re.transcript_id
+              AND re.exon_no = {exon_id}
+            JOIN misspl_app.ref_splice_sites rss
+              ON re.exon_id = rss.exon_id
+              AND rss.ss_type = {ss_type}
+            WHERE rt.tx_id = {transcript_id};"
+  flog.trace(qry)
+  
+  table_query <- glue_sql(qry,
+                          transcript_id = transcript_id,
+                          exon_id = exon_id,
+                          ss_type = ss_type,
+                          .con = con)
+  
+  res <- dbGetQuery(con, table_query)
+  return(as.list(res))
+}

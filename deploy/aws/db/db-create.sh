@@ -16,6 +16,8 @@ fi
 ENV="$1"
 APP="splicevault"
 
+POSTGRES_IMAGE="postgres:15-alpine"
+
 CF_STACK_NAME="au-${ENV}-${APP}-db"
 CF_INSTANCE_NAME="au_${ENV}_${APP}_database"
 DB_DATABASE="au_${ENV}_${APP}"
@@ -41,7 +43,7 @@ echo "DROP DATABASE IF EXISTS ${DB_DATABASE} WITH (FORCE);" | docker run -i --rm
   -e PGDATABASE=$DB_MASTER_DATABASE \
   -e PGUSER=$DB_MASTER_USERNAME \
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
-  postgres psql
+  $POSTGRES_IMAGE psql
 
 echo "Creating database ${DB_DATABASE} and user ${DB_USERNAME}..."
 echo "CREATE DATABASE ${DB_DATABASE};CREATE USER ${DB_USERNAME} WITH PASSWORD '${DB_PASSWORD}';" | docker run -i --rm \
@@ -49,7 +51,7 @@ echo "CREATE DATABASE ${DB_DATABASE};CREATE USER ${DB_USERNAME} WITH PASSWORD '$
   -e PGDATABASE=$DB_MASTER_DATABASE \
   -e PGUSER=$DB_MASTER_USERNAME \
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
-  postgres psql
+  $POSTGRES_IMAGE psql
 
 echo "Granting privileges on database ${DB_DATABASE} to user ${DB_USERNAME}..."
 echo "GRANT ALL PRIVILEGES ON DATABASE ${DB_DATABASE} to ${DB_USERNAME};" | docker run -i --rm \
@@ -57,7 +59,7 @@ echo "GRANT ALL PRIVILEGES ON DATABASE ${DB_DATABASE} to ${DB_USERNAME};" | dock
   -e PGDATABASE=$DB_DATABASE \
   -e PGUSER=$DB_MASTER_USERNAME \
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
-  postgres psql
+  $POSTGRES_IMAGE psql
 
 FILES=( "ref_tx" "ref_exons" "ref_tissues" "ref_splice_sites" "ref_missplicing_event" "misspl_events_300k_hg38_tx" "misspl_events_40k_hg19_tx" "misspl_events_40k_hg19_events" "misspl_events_300k_hg38_events" "missplicing_stats" "tissue_missplicing_stats" ) 
 
@@ -75,7 +77,7 @@ echo "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USERNAME};" | docker r
   -e PGDATABASE=$DB_DATABASE \
   -e PGUSER=$DB_MASTER_USERNAME \
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
-  postgres psql
+  $POSTGRES_IMAGE psql
 
 for index in ${!FILES[*]}; do
   FILE=${FILES[$index]}
@@ -101,7 +103,7 @@ for index in ${!FILES[*]}; do
 
   echo "Importing $FILE"
   
-  docker run --rm --network host -v /$(pwd)/:/data -e PGPASSWORD=$DB_MASTER_PASSWORD postgres:15-alpine psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME \
+  docker run --rm --network host -v /$(pwd)/:/data -e PGPASSWORD=$DB_MASTER_PASSWORD $POSTGRES_IMAGE psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME \
       -c "\copy $FILE FROM '/data/$FILE.csv' CSV;"
 
   echo "Imported $FILE"

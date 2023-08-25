@@ -322,8 +322,8 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
       var_pos <- content(r)[[1]]$start
 
       qry <- "SELECT ev.ss_type, ev.splice_site_pos, ev.exon_no, ev.gene_tx_id, tx.tx_id
-                FROM misspl_app.misspl_events_300k_hg38_events ev
-              JOIN misspl_app.misspl_events_300k_hg38_tx tx
+                FROM misspl_events_300k_hg38_events ev
+              JOIN misspl_events_300k_hg38_tx tx
                 ON ev.gene_tx_id = tx.gene_tx_id
                 WHERE splicing_event_class = 'normal splicing'
                 AND exon_no = {exon_id}
@@ -364,11 +364,11 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
 
 get_variant_sql_codes <- function(ss_type = NULL, exon_id = NULL, transcript_id = NULL) {
   qry <- "SELECT rt.transcript_id, re.exon_id, rss.ss_id
-            FROM misspl_app.ref_tx rt
-            JOIN misspl_app.ref_exons re
+            FROM ref_tx rt
+            JOIN ref_exons re
               ON rt.transcript_id = re.transcript_id
               AND re.exon_no = {exon_id}
-            JOIN misspl_app.ref_splice_sites rss
+            JOIN ref_splice_sites rss
               ON re.exon_id = rss.exon_id
               AND rss.ss_type = {ss_type}
             WHERE rt.tx_id = {transcript_id};"

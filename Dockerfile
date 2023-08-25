@@ -15,7 +15,6 @@ RUN R -e 'install.packages("odbc")'
 RUN R -e 'install.packages("scales")'
 RUN R -e 'install.packages("glue")'
 RUN R -e 'install.packages("futile.logger")'
-RUN R -e 'install.packages("shinydisconnect")'
 RUN R -e 'install.packages("config")'
 
 COPY . /srv/shiny-server/

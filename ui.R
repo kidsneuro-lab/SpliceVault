@@ -83,20 +83,6 @@ ui <- dashboardPage(
   # BODY --------------------------------------------------------------------
   
   dashboardBody(
-    disconnectMessage(
-      text = "SpliceVault has timed out. Please click below to reload SpliceVault",
-      refresh = "Reload",
-      background = "#FFFFFF",
-      colour = "#444444",
-      refreshColour = "#337AB7",
-      overlayColour = "#000000",
-      overlayOpacity = 0.6,
-      width = 450,
-      top = 50,
-      size = 22,
-      css = ""
-    ),
-    
     tags$head(
       tags$link(
         rel = "stylesheet", 

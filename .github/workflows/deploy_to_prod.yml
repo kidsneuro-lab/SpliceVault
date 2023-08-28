@@ -26,6 +26,11 @@ jobs:
           DB_USERNAME: ${{ vars.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
+      - name: Substitute google analytics key
+        run: envsubst '$GOOGLE_ANALYTICS_KEY' < google-analytics.html > temp.txt && mv temp.txt google-analytics.html
+        env:
+          GOOGLE_ANALYTICS_KEY: ${{ vars.GOOGLE_ANALYTICS_KEY }}
+          
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4

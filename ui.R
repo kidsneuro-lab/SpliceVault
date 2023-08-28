@@ -88,11 +88,8 @@ ui <- dashboardPage(
         rel = "stylesheet", 
         type = "text/css", 
         href = "krna_style.css"),
-      tags$link(rel = "shortcut icon", href = "favicon.svg")#,
-      #TODO check which environment is active and then include or exclude
-      #the google analytics dev html
-      
-      #includeHTML("google-analytics-dev.html") 
+      tags$link(rel = "shortcut icon", href = "favicon.svg"),      
+      includeHTML("google-analytics.html") 
     ),
     
     useShinyjs(),

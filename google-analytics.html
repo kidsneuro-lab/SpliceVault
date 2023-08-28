@@ -1,13 +1,13 @@
 <!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-09GZE94QE8"></script>
+<!-- The Google Analytics Key will be inserted at build time-->
+<script async src="https://www.googletagmanager.com/gtag/js?id=$GOOGLE_ANALYTICS_KEY"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'G-09GZE94QE8');
-  
-  
+  gtag('config', '$GOOGLE_ANALYTICS_KEY');
+    
   $(document).on('click', '#confirm', function() {
     gtag('event', 'click', {
       'event_category': 'retrieve',

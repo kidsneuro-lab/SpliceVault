@@ -1,6 +1,7 @@
 name: Verify redirect to test environment
 
 on:
+  workflow_dispatch:
   schedule:
     # Runs every day at 12:00 UTC. You can modify this as needed.
     - cron: '0 12 * * *'

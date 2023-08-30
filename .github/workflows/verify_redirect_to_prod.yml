@@ -1,4 +1,4 @@
-name: Verify redirect to test environment
+name: Verify redirect to prod environment
 
 on:
   schedule:
@@ -12,8 +12,8 @@ jobs:
     steps:
     - name: Check URL for 301 and location
       run: |
-        URL_TO_CHECK="https://kidsneuro.shinyapps.io/splicevault-test/"
-        EXPECTED_REDIRECT="https://test-splicevault.frontiergenomics.com.au"
+        URL_TO_CHECK="https://kidsneuro.shinyapps.io/splicevault/"
+        EXPECTED_REDIRECT="https://splicevault.frontiergenomics.com.au"
 
         RESPONSE=$(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" $URL_TO_CHECK)
 

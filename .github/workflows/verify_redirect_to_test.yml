@@ -1,4 +1,4 @@
-name: Check URL
+name: Verify redirect to test environment
 
 on:
   schedule:

@@ -5,7 +5,7 @@
 ########################################
 # This will need to be executed on a remote server, ideally close to the database
 # first, sync the splicevault files from s3 to the server
-# aws s3 sync s3://au-prod-splicevault-storage .
+# aws s3 sync s3://au-prod-splicevault-storage ./files
 # then execute the process using nohup
 # nohup ./db-create.sh prod > db-create.log 2>&1 &
 # exit when any command fails
@@ -119,11 +119,10 @@ done
 
 # Upload the chunks to the database
 LINES_PER_FILE="100000"
-cd chunks
 for index in ${!FILES[*]}; do
   FILE="${FILES[$index]}"
   DECOMPRESSED="decompressed/$FILE"
-  CHUNKS="$FILE-chunk-"
+  CHUNKS="chunks/$FILE-chunk-"
   
   # Loop through the small files and execute the command
   QUERY="$CHUNKS*"
@@ -132,7 +131,7 @@ for index in ${!FILES[*]}; do
 
     echo "Importing $CHUNK of file $FILE"
     
-    docker run --rm --network host -v /$(pwd)/:/data -e PGPASSWORD=$DB_MASTER_PASSWORD $POSTGRES_IMAGE psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME \
+    docker run --rm --network host -v /$(pwd):/data -e PGPASSWORD=$DB_MASTER_PASSWORD $POSTGRES_IMAGE psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME \
      -c "\copy $FILE FROM '/data/$CHUNK' CSV;"
     
   done

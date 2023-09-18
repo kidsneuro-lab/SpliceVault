@@ -3,7 +3,11 @@
 # Usage
 # ./db-create.sh prod
 ########################################
-
+# This will need to be executed on a remote server, ideally close to the database
+# first, sync the splicevault files from s3 to the server
+# aws s3 sync s3://au-prod-splicevault-storage .
+# then execute the process using nohup
+# nohup ./db-create.sh prod > db-create.log 2>&1 &
 # exit when any command fails
 set -e
 
@@ -79,24 +83,24 @@ echo "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USERNAME};" | docker r
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
   $POSTGRES_IMAGE psql
 
-# mkdir -p decompressed
-# for index in ${!FILES[*]}; do
-#   COMPRESSED="files/${FILES[$index]}.csv.gz"
-#   DECOMPRESSED="decompressed/${FILES[$index]}.csv"
-#   echo "Decompressing: $COMPRESSED"
+mkdir -p decompressed
+for index in ${!FILES[*]}; do
+  COMPRESSED="files/${FILES[$index]}.csv.gz"
+  DECOMPRESSED="decompressed/${FILES[$index]}.csv"
+  echo "Decompressing: $COMPRESSED"
   
-#   if [ ! -f $DECOMPRESSED ]; then
-#     echo "Decompressing $COMPRESSED -> $DECOMPRESSED"
-#     if [[ ! -f $COMPRESSED ]]; then
-#       echo "File $COMPRESSED does not exist."
-#       exit 1
-#     fi
-#     gunzip -v -c $COMPRESSED > $DECOMPRESSED
-#   else
-#     echo "File $DECOMPRESSED already decompressed"
-#   fi
+  if [ ! -f $DECOMPRESSED ]; then
+    echo "Decompressing $COMPRESSED -> $DECOMPRESSED"
+    if [[ ! -f $COMPRESSED ]]; then
+      echo "File $COMPRESSED does not exist."
+      exit 1
+    fi
+    gunzip -v -c $COMPRESSED > $DECOMPRESSED
+  else
+    echo "File $DECOMPRESSED already decompressed"
+  fi
 
-# done
+done
 
 # Split files into chunks of 100K row csv files
 mkdir -p chunks

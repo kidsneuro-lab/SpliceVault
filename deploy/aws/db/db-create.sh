@@ -79,32 +79,59 @@ echo "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USERNAME};" | docker r
   -e PGPASSWORD=$DB_MASTER_PASSWORD \
   $POSTGRES_IMAGE psql
 
-for index in ${!FILES[*]}; do
-  FILE=${FILES[$index]}
-  echo "Processing: $FILE"
+# mkdir -p decompressed
+# for index in ${!FILES[*]}; do
+#   COMPRESSED="files/${FILES[$index]}.csv.gz"
+#   DECOMPRESSED="decompressed/${FILES[$index]}.csv"
+#   echo "Decompressing: $COMPRESSED"
   
-  if [ ! -f "$FILE.csv" ]; then
-    echo "Decompressing $FILE.csv.gz"
-    if [[ ! -f $FILE.csv.gz ]]; then
-      echo "File $FILE.csv.gz does not exist."
-      exit 1
-    fi
-    gunzip -v -c $FILE.csv.gz > $FILE.csv
-  else
-    echo "File $FILE.csv already decompressed"
-  fi
+#   if [ ! -f $DECOMPRESSED ]; then
+#     echo "Decompressing $COMPRESSED -> $DECOMPRESSED"
+#     if [[ ! -f $COMPRESSED ]]; then
+#       echo "File $COMPRESSED does not exist."
+#       exit 1
+#     fi
+#     gunzip -v -c $COMPRESSED > $DECOMPRESSED
+#   else
+#     echo "File $DECOMPRESSED already decompressed"
+#   fi
 
-  echo "Processed: $FILE"
+# done
+
+# Split files into chunks of 100K row csv files
+mkdir -p chunks
+LINES_PER_FILE="100000"
+for index in ${!FILES[*]}; do
+  FILE="${FILES[$index]}"
+  DECOMPRESSED="decompressed/$FILE"
+  CHUNKS="chunks/$FILE-chunk-"
   
+  echo "Splitting $FILE into chunks of $LINES_PER_FILE lines"
+  
+  split -l $LINES_PER_FILE $DECOMPRESSED.csv $CHUNKS --numeric-suffixes=1 --suffix-length=6 --additional-suffix=.csv
+  
+  echo "Finished splitting $FILE"
 done
 
+# Upload the chunks to the database
+LINES_PER_FILE="100000"
+cd chunks
 for index in ${!FILES[*]}; do
-  FILE=${FILES[$index]}
-
-  echo "Importing $FILE"
+  FILE="${FILES[$index]}"
+  DECOMPRESSED="decompressed/$FILE"
+  CHUNKS="$FILE-chunk-"
   
-  docker run --rm --network host -v /$(pwd)/:/data -e PGPASSWORD=$DB_MASTER_PASSWORD $POSTGRES_IMAGE psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME \
-      -c "\copy $FILE FROM '/data/$FILE.csv' CSV;"
+  # Loop through the small files and execute the command
+  QUERY="$CHUNKS*"
+  echo "Starting import of $FILE using query $QUERY"
+  for CHUNK in $QUERY; do
 
-  echo "Imported $FILE"
+    echo "Importing $CHUNK of file $FILE"
+    
+    docker run --rm --network host -v /$(pwd)/:/data -e PGPASSWORD=$DB_MASTER_PASSWORD $POSTGRES_IMAGE psql -h $DB_HOST -d $DB_DATABASE -U $DB_MASTER_USERNAME \
+     -c "\copy $FILE FROM '/data/$CHUNK' CSV;"
+    
+  done
+  
+  echo "Finished importing $FILE"
 done

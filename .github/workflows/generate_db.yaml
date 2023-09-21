@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 jobs:
 
-  generate_db:
+generate_db:
     runs-on: ubuntu-latest
     environment:
       name: prod

@@ -1,10 +1,10 @@
-name: load_db_data
+name: generate_db
 
 on:
   workflow_dispatch:
 jobs:
 
-  downloads_files:
+  generate_db:
     runs-on: ubuntu-latest
     environment:
       name: prod

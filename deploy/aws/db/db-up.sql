@@ -1,6 +1,6 @@
 create table misspl_events_40k_hg19_tx
 (
-    gene_tx_id      integer generated always as identity unique,
+    gene_tx_id      integer primary key,
     gene_name       varchar,
     tx_id           varchar,
     canonical       integer,
@@ -32,24 +32,12 @@ create table misspl_events_40k_hg19_events
     chr                     varchar,
     donor_pos               integer,
     acceptor_pos            integer,
-    gene_tx_id              integer constraint fk_event_tx_id references misspl_events_40k_hg19_tx (gene_tx_id)
+    gene_tx_id              integer
 );
-
-create index idx_evnt_gene_tx_id
-    on misspl_events_40k_hg19_events (gene_tx_id);
-
-create index idx_evnt_sstype
-    on misspl_events_40k_hg19_events (ss_type);
-
-create index idx_tx_gene
-    on misspl_events_40k_hg19_tx (gene_name);
-
-create index idx_tx_gene_tx
-    on misspl_events_40k_hg19_tx (gene_name, tx_id);
 
 create table misspl_events_300k_hg38_tx
 (
-    gene_tx_id      integer generated always as identity unique,
+    gene_tx_id      integer primary key,
     gene_name       varchar,
     tx_id           varchar,
     canonical       integer,
@@ -79,66 +67,47 @@ create table misspl_events_300k_hg38_events
     donor_pos            integer,
     acceptor_pos         integer,
     gene_tx_id           integer
-        constraint fk_300k_hg38_event_tx_id
-            references misspl_events_300k_hg38_tx (gene_tx_id)
 );
-
-create index idx_300k_hg38_evnt_gene_tx_id
-    on misspl_events_300k_hg38_events (gene_tx_id);
-
-create index idx_300k_hg38_tx_gene
-    on misspl_events_300k_hg38_tx (gene_name);
-
-create index idx_300k_hg38_tx_gene_tx
-    on misspl_events_300k_hg38_tx (gene_name, tx_id);
 
 create table ref_tx
 (
-    transcript_id   serial constraint ref_tx_pk primary key,
+    transcript_id   integer primary key,
     gene_name       varchar not null,
     tx_id           varchar not null,
     strand          char    not null,
     canonical       boolean not null,
     transcript_type varchar not null,
-    assembly        varchar not null,
-    constraint ref_tx_un_1 unique (gene_name, tx_id, assembly)
+    assembly        varchar not null
 );
-
-create index ref_tx_transcript_type_idx
-    on ref_tx (transcript_type);
 
 create table ref_exons
 (
-    exon_id       serial constraint ref_exons_pk primary key,
-    transcript_id integer not null constraint ref_exons_fk references ref_tx on update cascade on delete cascade,
+    exon_id       integer primary key,
+    transcript_id integer not null,
     exon_no       integer not null
 );
 
 create table ref_splice_sites
 (
-    ss_id           serial constraint ref_ss_pk primary key,
-    exon_id         integer not null constraint ref_ss_fk_2 references ref_exons on update cascade on delete cascade,
+    ss_id           integer primary key,
+    exon_id         integer not null,
     splice_site_pos integer not null,
-    ss_type         varchar not null,
-    constraint ref_ss_un_1 unique (exon_id, splice_site_pos, ss_type)
+    ss_type         varchar not null
 );
-
-create index ref_splice_sites_ss_type_idx
-    on ref_splice_sites (ss_type);
 
 create table ref_missplicing_event
 (
-    misspl_event_id serial constraint ref_misspl_evnt_pk primary key,
+    misspl_event_id integer primary key,
     chromosome      varchar not null,
     donor_pos       integer not null,
     acceptor_pos    integer not null,
-    assembly        varchar not null,
-    constraint ref_misspl_evnt_un_1 unique (chromosome, donor_pos, acceptor_pos, assembly)
+    assembly        varchar not null
 );
 
 create table ref_tissues
 (
-    tissue_id             serial constraint ref_tissues_pk primary key, tissue varchar not null constraint ref_tissues_un_1 unique,
+    tissue_id             integer primary key, 
+    tissue                varchar not null,
     num_samples           integer not null,
     tissue_category       varchar not null,
     clinically_accessible boolean not null
@@ -146,11 +115,11 @@ create table ref_tissues
 
 create table missplicing_stats
 (
-    misspl_stat_id       serial constraint ref_ms_pk primary key,
-    transcript_id        integer not null constraint ref_ms_fk_1 references ref_tx on update cascade on delete cascade,
-    exon_id              integer not null constraint ref_ms_fk_2 references ref_exons on update cascade on delete cascade,
-    ss_id                integer not null constraint ref_ms_fk_3 references ref_splice_sites on update cascade on delete cascade,
-    misspl_event_id      integer not null constraint ref_ms_fk_4 references ref_missplicing_event on update cascade on delete cascade,
+    misspl_stat_id       integer primary key,
+    transcript_id        integer not null,
+    exon_id              integer not null,
+    ss_id                integer not null,
+    misspl_event_id      integer not null,
     splicing_event_class varchar,
     event_rank           integer not null,
     in_gtex              boolean,
@@ -167,21 +136,15 @@ create table missplicing_stats
     max_junc_count       integer
 );
 
-create index missplicing_stats_exon_id_idx
-    on missplicing_stats (exon_id);
-
-
 create table tissue_missplicing_stats
 (
-    tissue_misspl_stat_id serial constraint ref_tms_pk primary key,
-    misspl_stat_id        integer not null constraint ref_tms_fk_1 references missplicing_stats on update cascade on delete cascade,
-    tissue_id             integer          not null constraint ref_tms_fk_2 references ref_tissues on update cascade on delete cascade,
-    event_rank            integer          not null,
-    tissue_sample_count   integer          not null,
-    min_junc_count        integer          not null,
+    tissue_misspl_stat_id integer primary key,
+    misspl_stat_id        integer not null,
+    tissue_id             integer not null,
+    event_rank            integer not null,
+    tissue_sample_count   integer not null,
+    min_junc_count        integer not null,
     avg_junc_count        double precision not null,
-    max_junc_count        integer          not null
+    max_junc_count        integer not null
 );
 
-create index tissue_missplicing_stats_misspl_stat_id_idx
-    on tissue_missplicing_stats (misspl_stat_id);

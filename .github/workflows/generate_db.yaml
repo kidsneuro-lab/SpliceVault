@@ -1,0 +1,37 @@
+name: load_db_data
+
+on:
+  workflow_dispatch:
+jobs:
+
+  downloads_files:
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+    steps:
+    
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ vars.AWS_DEPLOYMENT_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_DEPLOYMENT_SECRET }}
+
+      - name: Download Files
+        run: aws s3 sync --no-progress s3://$AWS_S3_BUCKET_NAME .
+        working-directory: deploy/aws/db
+        env:
+          AWS_S3_BUCKET_NAME: ${{ vars.AWS_S3_BUCKET_NAME }}
+                
+      - name: Load files into database
+        working-directory: deploy/aws/db
+        run: ./generate_db.sh
+        
+      - name: Upload Files
+        run: aws s3 sync --no-progress *.db s3://$AWS_S3_BUCKET_NAME
+        working-directory: deploy/aws/db
+        env:
+            AWS_S3_BUCKET_NAME: ${{ vars.AWS_S3_BUCKET_NAME }}

@@ -34,7 +34,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        R -e 'install.packages("rsconnect")'
+        R -e 'install.packages("rsconnect", dependencies = T)'
       
     - name: Deploy to shinyapps.io using Test environment secrets
       run: |

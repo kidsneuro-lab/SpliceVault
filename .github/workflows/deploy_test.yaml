@@ -17,7 +17,7 @@ jobs:
     - name: Prepare Google Analytics file
       run: |
         cp google-analytics-template.html google-analytics.html
-        sed -i 's/GA_MEASUREMENT_ID/${{ secrets.GA_MEASUREMENT_ID }}/g' google-analytics.html
+        sed -i 's/GA_MEASUREMENT_ID/${{ vars.GA_MEASUREMENT_ID }}/g' google-analytics.html
         
     - name: Prepare config file
       run: |
@@ -35,7 +35,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        R -e 'install.packages("rsconnect", dependencies = TRUE)'
+        R -e 'install.packages("rsconnect")'
       
     - name: Deploy to shinyapps.io using Test environment secrets
       run: |

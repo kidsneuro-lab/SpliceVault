@@ -1,7 +1,7 @@
 source("helpers.R")
 
 server <- function(input, output, session) {
-
+  
   #### Initialise ####
   observeEvent({
     input$dbInput
@@ -16,13 +16,13 @@ server <- function(input, output, session) {
                            transcript_type = tolower(input$txTypeInput))$gene_name
     
     geneInput <- isolate(input$geneInput)
-
+    
     if (geneInput %in% genenames & geneInput != "") {
       gene_presel <- geneInput
     } else {
       gene_presel <- genenames[1]
     }
-
+    
     updateSelectizeInput(session = session,
                          inputId = 'geneInput',
                          choices = genenames,
@@ -43,7 +43,7 @@ server <- function(input, output, session) {
     } else {
       tx_presel <- tx_list[1]
     }
-
+    
     updateSelectizeInput(session = session,
                          inputId = 'txInput',
                          choices = tx_list,
@@ -80,9 +80,9 @@ server <- function(input, output, session) {
         session$userData$tissues <- tissues_list
         
         selectizeInput(label = "Tissues (* = Accessible Tissues)", 
-                    inputId = 'tissuesInput',
-                    choices = tissues_list,
-                    selected = tissues_list[1])
+                       inputId = 'tissuesInput',
+                       choices = tissues_list,
+                       selected = tissues_list[1])
         
       } else {
         return(NULL)
@@ -206,9 +206,42 @@ server <- function(input, output, session) {
   output$title_panel <- renderText({
     "Mis-Splicing Events Table"
   })
+
+  
+  # observeEvent(input$variant, {
+  #   
+  #   if (input$mode == "Variant"){
+  #     variant_input_data <<- get_variant_data_restapi("Variant", input$variant)
+  #     variant_code_data <<- get_variant_sql_codes(
+  #       tolower(variant_input_data[[4]][1]),
+  #       variant_input_data[[3]][1],
+  #       variant_input_data[[2]][1]
+  #     )
+  #     mod_geneInput <- variant_input_data[[1]][1]
+  #     mod_txInput <- variant_input_data[[2]][1]
+  #     mod_exonInput <- variant_input_data[[3]][1]
+  #     mod_ssTypeInput <- variant_input_data[[4]][1]
+  #   }
+  # })
+  
   
   #### Generate table ####
   observeEvent(input$confirm, {
+    
+    if (input$mode == "Variant"){
+
+          variant_input_data <<- get_variant_data_restapi("Variant", input$variant, input$ssTypeInput)
+          variant_code_data <<- get_variant_sql_codes(
+            tolower(variant_input_data[[4]][1]),
+            variant_input_data[[3]][1],
+            variant_input_data[[2]][1]
+          )
+      mod_geneInput <- variant_input_data[[1]][1]
+      mod_txInput <- variant_input_data[[2]][1]
+      mod_exonInput <- variant_input_data[[3]][1]
+      mod_ssTypeInput <- variant_input_data[[4]][1]
+    }
+    
     if (input$dbInput == '300K-RNA (hg38)' & input$tissuesInput == 0) {
       output$clinAccessTissues <- renderUI({
         tags$span("B - Blood Whole; F - Cells - Cultured fibroblasts; L - Cells - EBV-transformed lymphocytes; M - Muscle - Skeletal")
@@ -231,18 +264,44 @@ server <- function(input, output, session) {
     } else {
       events  = paste("top ", isolate(input$eventsNoInput))
     }
-    output$table_title <- renderText(paste0("Showing ", events, 
-                                            " unannotated events in ", isolate(input$dbInput),
-                                            " for ", gsub(' \\(Canonical\\)', '', names(session$userData$tx)[session$userData$tx==isolate(input$txInput)]), " ",
-                                            ifelse(isolate(input$tissuesInput) == 0, "", paste0(" [", names(session$userData$tissues)[session$userData$tissues==isolate(input$tissuesInput)], "] ")),
-                                            "(",isolate(input$geneInput), ")",
-                                            " ", isolate(input$ssTypeInput)," " , names(session$userData$exons)[session$userData$exons==isolate(input$exonInput)],
-                                            settings ))
+    if (input$mode == "Gene/Transcript/Exon"){
+      output$table_title <- renderText(paste0("Showing ", events, 
+                                              " unannotated events in ", isolate(input$dbInput),
+                                              " for ", gsub(' \\(Canonical\\)', '', names(session$userData$tx)[session$userData$tx==isolate(input$txInput)]), " ",
+                                              ifelse(isolate(input$tissuesInput) == 0, "", paste0(" [", names(session$userData$tissues)[session$userData$tissues==isolate(input$tissuesInput)], "] ")),
+                                              "(",isolate(input$geneInput), ")",
+                                              " ", isolate(input$ssTypeInput)," " , names(session$userData$exons)[session$userData$exons==isolate(input$exonInput)],
+                                              settings ))
+    } else if (input$mode == "Variant"  & mod_txInput != "error"){
+      output$table_title <- renderText(paste0("Showing ", events, 
+                                              " unannotated events in ", isolate(input$dbInput),
+                                              " for ", gsub(' \\(Canonical\\)', '', mod_txInput), " ",
+                                              ifelse(isolate(input$tissuesInput) == 0, "", paste0(" [", names(session$userData$tissues)[session$userData$tissues==isolate(input$tissuesInput)], "] ")),
+                                              "(",mod_geneInput, ")",
+                                              " ", mod_ssTypeInput," " , mod_exonInput,
+                                              settings ))
+      
+    } else if (input$mode == "Variant" & mod_txInput == "error"){
+      output$table_title <- renderText(mod_geneInput)
+    }
     
   })
   
   #### Output table formatter ####
   table_ms <- eventReactive(input$confirm, {
+    
+    if (input$mode == "Variant"){
+      mod_txInput <- variant_code_data$transcript_id[1]
+      mod_exonInput <- variant_code_data$exon_id[1]
+      mod_ssTypeInput <- tolower(variant_input_data[[4]][1])
+      
+      
+    }else if (input$mode == "Gene/Transcript/Exon"){
+      mod_txInput <- input$txInput
+      mod_exonInput <- input$exonInput
+      mod_ssTypeInput <- tolower(input$ssTypeInput)
+    }
+    
     if (input$dbInput == '300K-RNA (hg38)') {
       db = '300k_hg38'
       if (input$tissuesInput == 0) {
@@ -265,7 +324,7 @@ server <- function(input, output, session) {
                                "}")
                            ))
         
-  
+        
       } else {
         set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Skipped Exons', 'Cryptic Position', 
                          'Samples (GTEx)', 'Max Reads (GTEx)', 'Splice Junction', 'IGV')
@@ -310,11 +369,11 @@ server <- function(input, output, session) {
     } else {
       event_filt = ""
     }
-
+    
     set_table <- get_misspl_stats(db = input$dbInput, 
-                                  ss_type = tolower(input$ssTypeInput), 
-                                  exon_id = input$exonInput, 
-                                  transcript_id = input$txInput, 
+                                  ss_type = mod_ssTypeInput, 
+                                  exon_id = mod_exonInput, 
+                                  transcript_id = mod_txInput, 
                                   cryp_filt = cryp_filt, 
                                   es_filt = es_filt, 
                                   event_filt = event_filt, 
@@ -406,8 +465,8 @@ server <- function(input, output, session) {
             )
           ),
           text = 'Download')),
-        pageLength = 5,
-        #lengthMenu = c(seq(5, 150, 10)),
+        pageLength = if(input$allevents == FALSE){input$eventsNoInput + 1}else{11},
+        #lengthMenu = c(seq(5, 10, 20)),
         ordering = FALSE,
         #scrollY="350px",
         scrollX=FALSE,

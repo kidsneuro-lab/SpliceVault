@@ -41,4 +41,4 @@ jobs:
     - name: Deploy to shinyapps.io using Prod environment secrets
       run: |
         R -e 'rsconnect::setAccountInfo(name="${{ vars.SHINYAPPS_ACCOUNT_NAME }}", token="${{ secrets.SHINYAPPS_TOKEN }}", secret="${{ secrets.SHINYAPPS_SECRET }}")'
-        R -e 'rsconnect::deployApp(appName="${{ SHINYAPPS_APP_NAME }}", account="${{ vars.SHINYAPPS_ACCOUNT_NAME }}")'
+        R -e 'rsconnect::deployApp(appName="${{ vars.SHINYAPPS_APP_NAME }}", account="${{ vars.SHINYAPPS_ACCOUNT_NAME }}")'

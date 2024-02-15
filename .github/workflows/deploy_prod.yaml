@@ -28,16 +28,13 @@ jobs:
         sed -i 's/DB_USER/${{ vars.DB_USER }}/g' config.yml
         sed -i 's/DB_PASSWORD/${{ secrets.DB_PASSWORD }}/g' config.yml
 
-    - name: Set up R
-      uses: r-lib/actions/setup-r@v2
+    - name: Deploy Shiny App
+      uses: BDSI-Utwente/shinyapps-deploy-github-action@v2
       with:
-        r-version: '4.2.3'
+        # account and application name (https://<accountName>.shinyapps.io/<appName>)
+          appName: ${{ vars.SHINYAPPS_APP_NAME }}
+          accountName: ${{ vars.SHINYAPPS_ACCOUNT_NAME }}
 
-    - name: Install dependencies
-      run: |
-        R -e 'install.packages("rsconnect", dependencies = T)'
-      
-    - name: Deploy to shinyapps.io using Prod environment secrets
-      run: |
-        R -e 'rsconnect::setAccountInfo(name="${{ vars.SHINYAPPS_ACCOUNT_NAME }}", token="${{ secrets.SHINYAPPS_TOKEN }}", secret="${{ secrets.SHINYAPPS_SECRET }}")'
-        R -e 'rsconnect::deployApp(appName="${{ vars.SHINYAPPS_APP_NAME }}", account="${{ vars.SHINYAPPS_ACCOUNT_NAME }}")'
+          # token and secret obtained from https://www.shinyapps.io/admin/#/tokens
+          accountToken: ${{ secrets.SHINYAPPS_TOKEN }}
+          accountSecret: ${{ secrets.SHINYAPPS_SECRET }}

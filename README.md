@@ -1,3 +1,4 @@
+
 # SpliceVault
 
 SpliceVault is a web portal to access 300K-RNA (hg38) and 40K-RNA (hg19), which quantifies natural variation in splicing and potently predicts the nature of variant-associated mis-splicing. Users require no bioinformatics expertise and can retrieve stochastic mis-splicing events for any splice-junction annotated in Ensembl or RefSeq.
@@ -11,6 +12,12 @@ We highly recommend reading ***Dawes et al. 2021 SpliceVault: predicting the pre
 ## Online portal
 
 SpliceVault is hosted at https://kidsneuro.shinyapps.io/splicevault/
+
+## Available through Ensembl VEP
+
+https://www.ensembl.info/2024/01/11/ensembl-111-has-been-released/
+
+SpliceVault is a new VEP plugin that predicts exon-skipping events and activated cryptic splice sites based on the most common mis-splicing events. This plugin is currently only available on the command-line platform. Please refer to [# Use of SpliceVault through Ensembl VEP](https://github.com/kidsneuro-lab/SpliceVault/wiki/Use-of-SpliceVault-through-Ensembl-VEP) for more information.
 
 ## What was this developed on
 * R 4.1+

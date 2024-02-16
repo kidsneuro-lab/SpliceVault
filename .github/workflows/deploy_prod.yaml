@@ -2,9 +2,6 @@ name: Deploy SpliceVault Prod
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   deploy-prod:

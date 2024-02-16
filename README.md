@@ -6,7 +6,7 @@ Default settings display 300K-RNA Top-4 output according to the optimised parame
 
 Our recommendation for application of PVS1 for essential splice-site variants is theorized consideration of the 300K-RNA Top-4: a feasible, evidence-based method to reliably assess for probable cryptic activation within a larger distance window of 600 nt.
 
-We highly recommend reading ***Dawes et al. 2021 SpliceVault: predicting the precise nature of variant-associated mis-splicing*** to gain a better understanding of the data and stats behind SpliceVault.
+We highly recommend reading ***Dawes et al, Nature Genetics 2023 https://www.nature.com/articles/s41588-022-01293-8 SpliceVault: predicting the precise nature of variant-associated mis-splicing*** to gain a better understanding of the data and stats behind SpliceVault.
 
 Please cite Dawes et al, Nature Genetics 2023 https://www.nature.com/articles/s41588-022-01293-8 if you use the SpliceVault web portal or VEP plugin in your research.
 

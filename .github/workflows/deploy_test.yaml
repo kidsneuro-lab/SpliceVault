@@ -1,0 +1,43 @@
+name: Deploy SpliceVault Test
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # This line allows manual triggering of the workflow
+
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    environment: test  # Specifies the GitHub Environment to use
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      
+    - name: Prepare Google Analytics file
+      run: |
+        cp google-analytics-template.html google-analytics.html
+        sed -i 's/GA_MEASUREMENT_ID/${{ vars.GA_MEASUREMENT_ID }}/g' google-analytics.html
+        
+    - name: Prepare config file
+      run: |
+        cp config-template.yml config.yml
+        sed -i 's/DB_HOST/${{ vars.DB_HOST }}/g' config.yml
+        sed -i 's/DB_NAME/${{ vars.DB_NAME }}/g' config.yml
+        sed -i 's/DB_USER/${{ vars.DB_USER }}/g' config.yml
+        sed -i 's/DB_PASSWORD/${{ secrets.DB_PASSWORD }}/g' config.yml
+        
+    - name: Deploy Shiny App
+      uses: kidsneuro-lab/shinyapps-deploy-github-action@forceupdate-flag-added
+      with:
+          # account and application name (https://<accountName>.shinyapps.io/<appName>)
+          appName: ${{ vars.SHINYAPPS_APP_NAME }}
+          accountName: ${{ vars.SHINYAPPS_ACCOUNT_NAME }}
+
+          # token and secret obtained from https://www.shinyapps.io/admin/#/tokens
+          accountToken: ${{ secrets.SHINYAPPS_TOKEN }}
+          accountSecret: ${{ secrets.SHINYAPPS_SECRET }}
+          
+          # force update if app with same name is already deployed
+          forceUpdate: true

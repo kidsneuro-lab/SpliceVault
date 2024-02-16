@@ -1,12 +1,48 @@
 <!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-09GZE94QE8"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'G-09GZE94QE8');
+  gtag('config', 'GA_MEASUREMENT_ID');
   
+  $(window).on('load', function() {
+    const faq_element = document.querySelector('a[data-value="FAQ"]');
+    const faq_element_id = faq_element ? faq_element.id : 'Element not found';
+  
+    const gte_element = document.querySelector('a[data-value="Gene/Transcript/Exon"]');
+    const gte_element_id = gte_element ? gte_element.id : 'Element not found';
+  
+    const var_element = document.querySelector('a[data-value="Variant"]');
+    const var_element_id = var_element ? var_element.id : 'Element not found';
+    
+    console.log("FAQ element id                        : " + faq_element_id);
+    console.log("Gene/Transcript/Exon tab's element id : " + gte_element_id);
+    console.log("Variant tab's element id              : " + var_element_id);
+    
+    $(document).on('click', gte_element_id, function() {
+      gtag('event', 'click', {
+        'event_category': 'query mode',
+        'event_label' : 'gene tx exon'
+        });
+    });
+    
+    $(document).on('click', var_element_id, function() {
+      gtag('event', 'click', {
+        'event_category': 'query mode',
+        'event_label' : 'variant'
+        });
+    });
+    
+    $(document).on('click', faq_element_id, function() {
+      gtag('event', 'click', {
+        'event_category': 'faq',
+        'event_label' : 'open faq'
+        });
+    });
+  })
+
   
   $(document).on('click', '#confirm', function() {
     gtag('event', 'click', {
@@ -80,6 +116,8 @@
       });
   });
   
+  /*
+  
   $(document).on('change', "#txInput", function() {
     gtag('event', 'change', {
       'event_category': 'splicesite',
@@ -108,12 +146,7 @@
       });
   });
   
-  $(document).on('click', "#ui-tab-40", function() {
-    gtag('event', 'click', {
-      'event_category': 'faq',
-      'event_label' : 'open faq'
-      });
-  });
+  */
   
   $(document).on('click', "shiny:filedownload", function() {
     gtag('event', 'click', {

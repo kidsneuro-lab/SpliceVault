@@ -9,3 +9,7 @@ rsconnect/*
 
 # Ignore DB credentials
 config.yml
+.env
+
+# Other project files
+google-analytics.html

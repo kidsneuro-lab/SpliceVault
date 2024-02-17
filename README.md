@@ -16,9 +16,7 @@ SpliceVault is hosted at <https://kidsneuro.shinyapps.io/splicevault/>
 
 ## Available through Ensembl VEP
 
-<https://www.ensembl.info/2024/01/11/ensembl-111-has-been-released/>
-
-SpliceVault is a new VEP plugin that predicts exon-skipping events and activated cryptic splice sites based on the most common mis-splicing events. This plugin is currently only available on the command-line platform. Please refer to [\# Use of SpliceVault through Ensembl VEP](https://github.com/kidsneuro-lab/SpliceVault/wiki/Use-of-SpliceVault-through-Ensembl-VEP) for more information.
+SpliceVault is a new VEP plugin released ([Ensembl 111 Release notes](https://www.ensembl.info/2024/01/11/ensembl-111-has-been-released/)) that predicts exon-skipping events and activated cryptic splice sites based on the most common mis-splicing events. This plugin is currently only available on the command-line platform. Please refer to [Use of SpliceVault through Ensembl VEP](https://github.com/kidsneuro-lab/SpliceVault/wiki/Use-of-SpliceVault-through-Ensembl-VEP) for more information.
 
 ## What was this developed on
 
@@ -32,11 +30,20 @@ Whilst not geared towards self-hosting, it is possible to install SpliceVault lo
 
 1.  Postgresql v13 database hosting splicing events. (Note: An [SQL script](https://github.com/kidsneuro-lab/SpliceVault/wiki/SQL-script-to-create-missplicing-database) has been provided on the Wiki for convenience) Note: You may use [dockerised postgres](https://hub.docker.com/_/postgres) or [postgres app](https://postgresapp.com/) (if on a Mac)
 
-2.  Splicing events datasets to load into the database (see below) and loaded using `psql`
+2.  Load splicing events datasets into a PostgreSQL instance (see below) using `psql` (**Note:** This will take some time)
 
-3.  Set up [config.yml](https://github.com/kidsneuro-lab/SpliceVault/wiki/config.yml-syntax)
+3. Ensure dependencies are installed. Please see [`dependencies.R`](https://github.com/kidsneuro-lab/SpliceVault/blob/main/dependencies.R)
 
-4.  Shiny app navigating Missplicing events (this repository). This is purely a database frontend that makes it easy to navigate Splice junction datasets. This has been primarily designed with <https://www.shinyapps.io/> and running this locally may require installation of additional dependencies
+3.  Set up .env file
+
+```bash
+DB_NAME=<db name>
+DB_HOST=<db hostname/ip address>
+DB_USER=<db user>
+DB_PASSWORD=<db password>
+```
+
+5.  Execute `./launch.sh`
 
 ## Download Source Data
 

@@ -18,6 +18,12 @@ SpliceVault is hosted at <https://kidsneuro.shinyapps.io/splicevault/>
 
 SpliceVault is a new VEP plugin released ([Ensembl 111 Release notes](https://www.ensembl.info/2024/01/11/ensembl-111-has-been-released/)) that predicts exon-skipping events and activated cryptic splice sites based on the most common mis-splicing events. This plugin is currently only available on the command-line platform. Please refer to [Use of SpliceVault through Ensembl VEP](https://github.com/kidsneuro-lab/SpliceVault/wiki/Use-of-SpliceVault-through-Ensembl-VEP) for more information.
 
+## Feedback form
+The feedback is a google form, located below.
+[edit link](https://docs.google.com/forms/d/1QifJ3cmzHgsgw393OMRKq7YjrqJ1wSadkG9M1ED-P04/edit)
+[distribution link](https://docs.google.com/forms/d/e/1FAIpQLSeJtgYDy1qf5_Z0wIyz6HmQR0tScgGVjW0QTzhCMwwCHLnA3w/viewform?usp=sf_link)
+[preview link](https://docs.google.com/forms/d/e/1FAIpQLSeJtgYDy1qf5_Z0wIyz6HmQR0tScgGVjW0QTzhCMwwCHLnA3w/viewform)
+
 ## What was this developed on
 
 -   R 4.1+

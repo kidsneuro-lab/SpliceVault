@@ -12,6 +12,13 @@ ui <- dashboardPage(
     title = span(img(src = "lariat.svg", height = 35), "SpliceVault"),
     titleWidth = 300,
     
+    tags$li(class = "dropdown", actionButton(onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeJtgYDy1qf5_Z0wIyz6HmQR0tScgGVjW0QTzhCMwwCHLnA3w/viewform?usp=sf_link', '_blank')",
+                                               icon = icon("lightbulb"),
+                                               inputId = 'feedback',
+                                               label = " SpliceVault Version 2.0!",
+                                               btn_type = "button", width = 200,
+                                               style = "background-color: #dd4b39;border-color: #d73925;padding-bottom:0px; padding-top:0px; padding-left:2px;padding-right:2px; font-size: 16px; height: 50px;")),
+    
     tags$li(class = "dropdown", actionButton(onclick="window.open('https://github.com/kidsneuro-lab/SpliceVault/issues', '_blank')",
                                              icon = icon("bug"),
                                              inputId = 'reportIssue',

@@ -51,6 +51,13 @@
       });
   });
   
+  $(document).on('click', '#feedback', function() {
+    gtag('event', 'click', {
+      'event_category': 'feedback',
+      'event_label' : 'click feedback'
+      });
+  });
+  
   $(document).one('change', '#eventsNoInput', function(e) {
     gtag('event', 'change', {
           'event_category': 'settings',

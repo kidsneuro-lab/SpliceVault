@@ -1,5 +1,4 @@
 /.Rproj.user/
-*.Rproj
 .Rhistory
 .DS_Store
 */.DS_Store
@@ -13,3 +12,8 @@ config.yml
 
 # Other project files
 google-analytics.html
+/.local
+/.idea/
+/.config
+
+/.bash_history

@@ -231,11 +231,17 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
 }
 
 get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
+  # Trim any accidental whitespaces around the variant
+  variant <- trimws(variant)
+  
+  flog.debug(paste("mode:", mode))
+  flog.debug(paste("variant:", variant))
+  flog.debug(paste("splicesite:", splicesite))
+  
   
   #TODO add code to activate this when generate table is pressed and variant input selected
   
   if(mode == "Variant"){
-    message(variant)
     refseq_transcript <- stringr::str_extract_all(variant, "NM_[0-9]+\\.[0-9]+")[[1]][1]
     ensembl_transcript <- stringr::str_extract_all(variant, "ENST[0-9]+\\.[0-9]+")[[1]][1]
     server <- "https://rest.ensembl.org"
@@ -262,7 +268,7 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
                    "content-type=application/json",
                    "&numbers=1&",transcript)
     
-    message(call)
+    flog.debug(call)
     
     r <- GET(call)
     
@@ -299,8 +305,6 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
     }
     
     #stop_for_status(r)
-    
-    message(content(r))
 
     #gene, transcript, exon, strand, splicesite
     
@@ -355,8 +359,6 @@ get_variant_data_restapi <- function(mode, variant, splicesite = NULL){
         splicesite <- "Acceptor"
       }
     }
-    
-    message(splicesite)
     
     list(gene, transcript, exon, splicesite)
   }

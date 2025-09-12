@@ -10,13 +10,20 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v5
       
     - name: Prepare Google Analytics file
       run: |
         cp google-analytics-template.html google-analytics.html
         sed -i 's/GA_MEASUREMENT_ID/${{ vars.GA_MEASUREMENT_ID }}/g' google-analytics.html
         
+    - name: Create version
+      id: create_version
+      uses: anothrNick/github-tag-action@1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DEFAULT_BUMP: patch
+
     - name: Prepare config file
       run: |
         cp config-template.yml config.yml
@@ -25,8 +32,12 @@ jobs:
         sed -i 's/DB_USER/${{ vars.DB_USER }}/g' config.yml
         sed -i 's/DB_PASSWORD/${{ secrets.DB_PASSWORD }}/g' config.yml
 
+    - name: Update version
+      run: |
+        sed -i -e "s/RELEASE/${{ steps.create_version.outputs.tag }} RC/" ui.R
+
     - name: Deploy Shiny App
-      uses: kidsneuro-lab/shinyapps-deploy-github-action@forceupdate-flag-added
+      uses: Mannyasoh/shinyapps-deploy-github-action@v1.0
       with:
           # account and application name (https://<accountName>.shinyapps.io/<appName>)
           appName: ${{ vars.SHINYAPPS_APP_NAME }}

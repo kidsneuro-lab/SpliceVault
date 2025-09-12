@@ -34,7 +34,7 @@ jobs:
 
     - name: Update version
       run: |
-        sed -i -e "s/RELEASE/${{ steps.create_version.outputs.tag }} RC/" ui.R
+        sed -i -e "s/RELEASE/${{ steps.create_version.outputs.tag }}/" ui.R
 
     - name: Deploy Shiny App
       uses: Mannyasoh/shinyapps-deploy-github-action@v1.0

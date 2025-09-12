@@ -7,44 +7,50 @@ ui <- dashboardPage(
   
   # HEADER ------------------------------------------------------------------
   
-  dashboardHeader(
-    
-    title = span(img(src = "lariat.svg", height = 35), "SpliceVault"),
-    titleWidth = 300,
-    
-    tags$li(class = "dropdown", actionButton(onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeJtgYDy1qf5_Z0wIyz6HmQR0tScgGVjW0QTzhCMwwCHLnA3w/viewform?usp=sf_link', '_blank')",
-                                               icon = icon("lightbulb"),
-                                               inputId = 'feedback',
-                                               label = " SpliceVault Version 2.0!",
-                                               btn_type = "button", width = 200,
-                                               style = "background-color: #dd4b39;border-color: #d73925;padding-bottom:0px; padding-top:0px; padding-left:2px;padding-right:2px; font-size: 16px; height: 50px;")),
-    
-    tags$li(class = "dropdown", actionButton(onclick="window.open('https://github.com/kidsneuro-lab/SpliceVault/issues', '_blank')",
-                                             icon = icon("bug"),
-                                             inputId = 'reportIssue',
-                                             label = "Report an issue",
-                                             btn_type = "button", width = 200,
-                                             style = "padding-bottom:0px; padding-top:0px; font-size: 16px; height: 50px;")),
-    
-    dropdownMenu(
-      type = "notifications", 
-      headerText = strong("Help"), 
-      icon = icon("question"), 
-      badgeStatus = NULL,
-      notificationItem(
-        text = steps$text[1],
-        icon = icon("dna")
-      ),
-      notificationItem(
-        text = steps$text[2],
-        icon = icon("cog")
-      ),
-      notificationItem(
-        text = steps$text[3],
-        icon = icon("question")
-      )
-    )
+dashboardHeader(
+  title = div(
+    style = "display: flex; align-items: center;",
+    span(img(src = "lariat.svg", height = 35), "SpliceVault"),
+    span("RELEASE", 
+         style = "color: white; font-size: 15px; margin-left: 5px;")
   ),
+  titleWidth = 320,
+  
+  tags$li(class = "dropdown", 
+          actionButton(onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSeJtgYDy1qf5_Z0wIyz6HmQR0tScgGVjW0QTzhCMwwCHLnA3w/viewform?usp=sf_link', '_blank')",
+                       icon = icon("lightbulb"),
+                       inputId = 'feedback',
+                       label = " SpliceVault Version 2.0!",
+                       btn_type = "button", width = 200,
+                       style = "background-color: #dd4b39;border-color: #d73925;padding-bottom:0px; padding-top:0px; padding-left:2px;padding-right:2px; font-size: 16px; height: 50px;")),
+  
+  tags$li(class = "dropdown", 
+          actionButton(onclick="window.open('https://github.com/kidsneuro-lab/SpliceVault/issues', '_blank')",
+                       icon = icon("bug"),
+                       inputId = 'reportIssue',
+                       label = "Report an issue",
+                       btn_type = "button", width = 200,
+                       style = "padding-bottom:0px; padding-top:0px; font-size: 16px; height: 50px;")),
+  
+  dropdownMenu(
+    type = "notifications", 
+    headerText = strong("Help"), 
+    icon = icon("question"), 
+    badgeStatus = NULL,
+    notificationItem(
+      text = steps$text[1],
+      icon = icon("dna")
+    ),
+    notificationItem(
+      text = steps$text[2],
+      icon = icon("cog")
+    ),
+    notificationItem(
+      text = steps$text[3],
+      icon = icon("question")
+    )
+  )
+),
   # SIDEBAR -----------------------------------------------------------------
   
   dashboardSidebar(

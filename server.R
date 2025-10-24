@@ -2,6 +2,29 @@ source("helpers.R")
 
 server <- function(input, output, session) {
   
+  #### Deep linking - Parse URL parameters ####
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    
+    if (!is.null(query$gene_id) || !is.null(query$tx_id)) {
+      flog.debug("Deep linking parameters detected")
+      flog.debug("gene_id: %s", query$gene_id)
+      flog.debug("tx_id: %s", query$tx_id)
+      flog.debug("exon: %s", query$exon)
+      flog.debug("site: %s", query$site)
+      
+      # Store deep linking parameters
+      session$userData$deeplink_gene_id <- query$gene_id
+      session$userData$deeplink_tx_id <- query$tx_id
+      session$userData$deeplink_exon <- query$exon
+      session$userData$deeplink_site <- query$site
+      session$userData$deeplink_active <- TRUE
+      
+      # Switch to Gene/Transcript/Exon tab if deep linking parameters are present
+      updateTabsetPanel(session, "mode", selected = "Gene/Transcript/Exon")
+    }
+  })
+  
   #### Initialise ####
   observeEvent({
     input$dbInput
@@ -17,7 +40,13 @@ server <- function(input, output, session) {
     
     geneInput <- isolate(input$geneInput)
     
-    if (geneInput %in% genenames & geneInput != "") {
+    # Check for deep linking gene parameter
+    if (!is.null(session$userData$deeplink_gene_id) && 
+        isTRUE(session$userData$deeplink_active) &&
+        session$userData$deeplink_gene_id %in% genenames) {
+      gene_presel <- session$userData$deeplink_gene_id
+      flog.debug("Using deep link gene: %s", gene_presel)
+    } else if (geneInput %in% genenames & geneInput != "") {
       gene_presel <- geneInput
     } else {
       gene_presel <- genenames[1]
@@ -38,7 +67,13 @@ server <- function(input, output, session) {
     session$userData$tx <- tx_list
     txInput <- isolate(input$txInput)
     
-    if (txInput %in% tx$id & txInput != "") {
+    # Check for deep linking transcript parameter
+    if (!is.null(session$userData$deeplink_tx_id) && 
+        isTRUE(session$userData$deeplink_active) &&
+        session$userData$deeplink_tx_id %in% tx$id) {
+      tx_presel <- session$userData$deeplink_tx_id
+      flog.debug("Using deep link transcript: %s", tx_presel)
+    } else if (txInput %in% tx$id & txInput != "") {
       tx_presel <- txInput
     } else {
       tx_presel <- tx_list[1]
@@ -50,6 +85,16 @@ server <- function(input, output, session) {
                          selected = tx_presel,
                          server = TRUE)
     
+    # Handle deep linking site parameter (D for Donor, A for Acceptor)
+    if (!is.null(session$userData$deeplink_site) && 
+        isTRUE(session$userData$deeplink_active)) {
+      if (session$userData$deeplink_site == "D") {
+        updateRadioButtons(session, "ssTypeInput", selected = "Donor")
+      } else if (session$userData$deeplink_site == "A") {
+        updateRadioButtons(session, "ssTypeInput", selected = "Acceptor")
+      }
+    }
+    
     # Exons list
     exons <- get_exons(db = input$dbInput,
                        transcript_id = tx_presel,
@@ -60,7 +105,19 @@ server <- function(input, output, session) {
     session$userData$exons <- exons_list
     exonInput <- isolate(input$exonInput)
     
-    if (exonInput %in% exons$id & exonInput != "") {
+    # For deep linking, we need to find the exon_id that matches the exon number
+    if (!is.null(session$userData$deeplink_exon) && 
+        isTRUE(session$userData$deeplink_active)) {
+      # Find the exon whose display_value starts with the exon number
+      matching_rows <- exons[grepl(paste0("^", session$userData$deeplink_exon, " "), exons$display_value), ]
+      if (nrow(matching_rows) > 0) {
+        ex_presel <- matching_rows$id[1]
+        flog.debug("Using deep link exon: %s", ex_presel)
+      } else {
+        ex_presel <- exons_list[1]
+        flog.debug("Deep link exon not found, using default")
+      }
+    } else if (exonInput %in% exons$id & exonInput != "") {
       ex_presel <- exonInput
     } else {
       ex_presel <- exons_list[1]
@@ -88,6 +145,14 @@ server <- function(input, output, session) {
         return(NULL)
       }
     })
+    
+    # Auto-trigger table generation if deep linking is active
+    if (isTRUE(session$userData$deeplink_active)) {
+      flog.debug("Auto-triggering table generation for deep link")
+      # Schedule the click after a short delay to ensure all inputs are updated
+      shinyjs::delay(500, shinyjs::click("confirm"))
+      session$userData$deeplink_active <- FALSE
+    }
   })
   
   #### Handle selection of gene ####

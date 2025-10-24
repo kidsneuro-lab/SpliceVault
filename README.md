@@ -14,6 +14,25 @@ Please cite Dawes et al, Nature Genetics 2023 https://www.nature.com/articles/s4
 
 SpliceVault is hosted at <https://kidsneuro.shinyapps.io/splicevault/>
 
+### Deep Linking
+
+SpliceVault supports deep linking via URL query parameters to directly navigate to specific gene/transcript/exon combinations. The following parameters are supported:
+
+- `gene_id`: Gene symbol (e.g., `DMD`)
+- `tx_id`: Transcript ID (e.g., `NM_001347423`)
+- `exon`: Exon number (e.g., `2`)
+- `site`: Splice site type - `D` for Donor or `A` for Acceptor
+
+Example URL:
+```
+https://kidsneuro.shinyapps.io/splicevault?gene_id=DMD&tx_id=NM_001347423&exon=2&site=D
+```
+
+When accessing SpliceVault with these parameters, the application will automatically:
+1. Switch to the "Gene/Transcript/Exon" tab
+2. Pre-populate the input fields with the specified values
+3. Generate the mis-splicing events table
+
 ## Available through Ensembl VEP
 
 SpliceVault is a new VEP plugin released ([Ensembl 111 Release notes](https://www.ensembl.info/2024/01/11/ensembl-111-has-been-released/)) that predicts exon-skipping events and activated cryptic splice sites based on the most common mis-splicing events. This plugin is currently only available on the command-line platform. Please refer to [Use of SpliceVault through Ensembl VEP](https://github.com/kidsneuro-lab/SpliceVault/wiki/Use-of-SpliceVault-through-Ensembl-VEP) for more information.

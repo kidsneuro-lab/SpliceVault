@@ -3,7 +3,7 @@ source("helpers.R")
 server <- function(input, output, session) {
   
   #### Deep linking - Parse URL parameters ####
-  observe({
+  observeEvent(session$clientData$url_search, {
     query <- parseQueryString(session$clientData$url_search)
     
     if (!is.null(query$gene_id) || !is.null(query$tx_id)) {
@@ -23,7 +23,7 @@ server <- function(input, output, session) {
       # Switch to Gene/Transcript/Exon tab if deep linking parameters are present
       updateTabsetPanel(session, "mode", selected = "Gene/Transcript/Exon")
     }
-  })
+  }, once = TRUE)
   
   #### Initialise ####
   observeEvent({
@@ -85,12 +85,17 @@ server <- function(input, output, session) {
                          selected = tx_presel,
                          server = TRUE)
     
+    # Determine the splice site type to use
+    ss_type_to_use <- tolower(isolate(input$ssTypeInput))
+    
     # Handle deep linking site parameter (D for Donor, A for Acceptor)
     if (!is.null(session$userData$deeplink_site) && 
         isTRUE(session$userData$deeplink_active)) {
       if (session$userData$deeplink_site == "D") {
+        ss_type_to_use <- "donor"
         updateRadioButtons(session, "ssTypeInput", selected = "Donor")
       } else if (session$userData$deeplink_site == "A") {
+        ss_type_to_use <- "acceptor"
         updateRadioButtons(session, "ssTypeInput", selected = "Acceptor")
       }
     }
@@ -99,7 +104,7 @@ server <- function(input, output, session) {
     exons <- get_exons(db = input$dbInput,
                        transcript_id = tx_presel,
                        transcript_type = tolower(isolate(input$txTypeInput)),
-                       ss_type = tolower(isolate(input$ssTypeInput)))
+                       ss_type = ss_type_to_use)
     
     exons_list <- setNames(exons$id, exons$display_value)
     session$userData$exons <- exons_list

@@ -25,9 +25,14 @@ server <- function(input, output, session) {
         if (grepl("^NM_|^NR_|^XM_|^XR_", query$tx_id)) {
           # RefSeq transcript
           updateRadioButtons(session, "txTypeInput", selected = "RefSeq")
+          flog.debug("Detected RefSeq transcript type from ID")
         } else if (grepl("^ENST", query$tx_id)) {
           # Ensembl transcript
           updateRadioButtons(session, "txTypeInput", selected = "Ensembl")
+          flog.debug("Detected Ensembl transcript type from ID")
+        } else {
+          # Unrecognized transcript ID format, use default (RefSeq)
+          flog.debug("Unrecognized transcript ID format, using default (RefSeq)")
         }
       }
       

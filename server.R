@@ -20,6 +20,17 @@ server <- function(input, output, session) {
       session$userData$deeplink_site <- query$site
       session$userData$deeplink_active <- TRUE
       
+      # Determine transcript type from transcript ID if provided
+      if (!is.null(query$tx_id)) {
+        if (grepl("^NM_|^NR_|^XM_|^XR_", query$tx_id)) {
+          # RefSeq transcript
+          updateRadioButtons(session, "txTypeInput", selected = "RefSeq")
+        } else if (grepl("^ENST", query$tx_id)) {
+          # Ensembl transcript
+          updateRadioButtons(session, "txTypeInput", selected = "Ensembl")
+        }
+      }
+      
       # Switch to Gene/Transcript/Exon tab if deep linking parameters are present
       updateTabsetPanel(session, "mode", selected = "Gene/Transcript/Exon")
     }

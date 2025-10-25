@@ -2,6 +2,50 @@ source("helpers.R")
 
 server <- function(input, output, session) {
   
+  #### URL Parameter Handling for Deep Linking ####
+  # Parse URL parameters when session starts
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    url_params <- parse_url_params(query)
+    
+    # Store URL params in session data
+    session$userData$url_params <- url_params
+    
+    # If valid URL parameters are present, process them
+    if (url_params$valid) {
+      flog.info("Processing deep link URL parameters")
+      
+      # Switch to Gene/Transcript/Exon tab
+      updateTabsetPanel(session = session,
+                       inputId = 'mode',
+                       selected = 'Gene/Transcript/Exon')
+      
+      # Set the database selection
+      updateRadioButtons(session = session,
+                        inputId = 'dbInput',
+                        selected = url_params$db)
+      
+      # Set the splice site type
+      updateRadioButtons(session = session,
+                        inputId = 'ssTypeInput',
+                        selected = url_params$site)
+      
+      # Store the URL parameters for later use
+      session$userData$url_gene <- url_params$gene
+      session$userData$url_tx <- url_params$tx
+      session$userData$url_exon <- url_params$exon
+      session$userData$url_auto_confirm <- TRUE
+    } else if (!is.null(url_params$error)) {
+      # Show error if URL parameters are invalid
+      flog.warn(paste("Invalid URL parameters:", url_params$error))
+      showNotification(
+        ui = paste("Error in URL parameters:", url_params$error),
+        type = "error",
+        duration = NULL
+      )
+    }
+  })
+  
   #### Initialise ####
   observeEvent({
     input$dbInput
@@ -17,7 +61,11 @@ server <- function(input, output, session) {
     
     geneInput <- isolate(input$geneInput)
     
-    if (geneInput %in% genenames & geneInput != "") {
+    # Check if URL parameter for gene is set
+    if (!is.null(session$userData$url_gene) && session$userData$url_gene %in% genenames) {
+      gene_presel <- session$userData$url_gene
+      session$userData$url_gene <- NULL  # Clear after use
+    } else if (geneInput %in% genenames & geneInput != "") {
       gene_presel <- geneInput
     } else {
       gene_presel <- genenames[1]
@@ -38,7 +86,11 @@ server <- function(input, output, session) {
     session$userData$tx <- tx_list
     txInput <- isolate(input$txInput)
     
-    if (txInput %in% tx$id & txInput != "") {
+    # Check if URL parameter for transcript is set
+    if (!is.null(session$userData$url_tx) && session$userData$url_tx %in% tx$id) {
+      tx_presel <- session$userData$url_tx
+      session$userData$url_tx <- NULL  # Clear after use
+    } else if (txInput %in% tx$id & txInput != "") {
       tx_presel <- txInput
     } else {
       tx_presel <- tx_list[1]
@@ -60,7 +112,27 @@ server <- function(input, output, session) {
     session$userData$exons <- exons_list
     exonInput <- isolate(input$exonInput)
     
-    if (exonInput %in% exons$id & exonInput != "") {
+    # Check if URL parameter for exon is set
+    if (!is.null(session$userData$url_exon)) {
+      # For hg38, exons have exon_no column; for hg19, id is exon_no
+      if (input$dbInput == '300K-RNA (hg38)' && "exon_no" %in% colnames(exons)) {
+        # Find exon by exon_no
+        matching_exons <- exons[as.character(exons$exon_no) == session$userData$url_exon, ]
+        if (nrow(matching_exons) > 0) {
+          ex_presel <- matching_exons$id[1]
+        } else {
+          ex_presel <- exons_list[1]
+        }
+      } else {
+        # For hg19, id is already exon_no
+        if (session$userData$url_exon %in% exons$id) {
+          ex_presel <- session$userData$url_exon
+        } else {
+          ex_presel <- exons_list[1]
+        }
+      }
+      session$userData$url_exon <- NULL  # Clear after use
+    } else if (exonInput %in% exons$id & exonInput != "") {
       ex_presel <- exonInput
     } else {
       ex_presel <- exons_list[1]
@@ -71,6 +143,13 @@ server <- function(input, output, session) {
                          choices = exons_list,
                          selected = ex_presel,
                          server = TRUE)
+    
+    # Auto-confirm if URL parameters were used
+    if (!is.null(session$userData$url_auto_confirm) && session$userData$url_auto_confirm) {
+      session$userData$url_auto_confirm <- NULL
+      # Trigger the confirm button after a short delay to ensure all inputs are ready
+      shinyjs::delay(500, shinyjs::click("confirm"))
+    }
     
     # Tissues list
     output$tissuesInputUI <- renderUI({

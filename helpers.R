@@ -61,7 +61,7 @@ get_exons <- function(db, transcript_id, transcript_type, ss_type) {
             ex <- dbGetQuery(con, ex_query)
           },
           "300K-RNA (hg38)" = {
-            ex_query <- glue_sql("SELECT re.exon_no || ' (g.' || rss.splice_site_pos || ')' AS display_value, re.exon_id as id
+            ex_query <- glue_sql("SELECT re.exon_no || ' (g.' || rss.splice_site_pos || ')' AS display_value, re.exon_id as id, re.exon_no
                                       FROM misspl_app.ref_exons re
                                     JOIN misspl_app.ref_splice_sites rss
                                       ON re.exon_id = rss.exon_id
@@ -384,4 +384,114 @@ get_variant_sql_codes <- function(ss_type = NULL, exon_id = NULL, transcript_id 
   
   res <- dbGetQuery(con, table_query)
   return(as.list(res))
+}
+
+# URL parameter parsing and validation for deep linking
+parse_url_params <- function(query) {
+  # Initialize result list
+  result <- list(
+    valid = FALSE,
+    error = NULL,
+    db = NULL,
+    gene = NULL,
+    tx = NULL,
+    exon = NULL,
+    site = NULL
+  )
+  
+  # If no query parameters, return early
+  if (is.null(query) || length(query) == 0) {
+    return(result)
+  }
+  
+  # Check if all required parameters are present
+  required_params <- c("db", "gene", "tx", "exon", "site")
+  missing_params <- setdiff(required_params, names(query))
+  
+  if (length(missing_params) > 0) {
+    result$error <- paste("Missing required URL parameters:", paste(missing_params, collapse = ", "))
+    return(result)
+  }
+  
+  # Validate and map db parameter
+  db_raw <- query$db
+  if (is.null(db_raw) || db_raw == "") {
+    result$error <- "URL parameter 'db' cannot be blank"
+    return(result)
+  }
+  
+  db_mapping <- c(
+    "hg38_300krna" = "300K-RNA (hg38)",
+    "hg38" = "300K-RNA (hg38)",
+    "GRCh38" = "300K-RNA (hg38)",
+    "hg19_40krna" = "40K-RNA (hg19)",
+    "hg19" = "40K-RNA (hg19)",
+    "GRCh37" = "40K-RNA (hg19)"
+  )
+  
+  if (!db_raw %in% names(db_mapping)) {
+    result$error <- paste("Invalid URL parameter 'db':", db_raw, 
+                         ". Valid values are: hg38_300krna, hg38, GRCh38, hg19_40krna, hg19, GRCh37")
+    return(result)
+  }
+  
+  result$db <- db_mapping[db_raw]
+  
+  # Validate gene parameter
+  gene_raw <- query$gene
+  if (is.null(gene_raw) || gene_raw == "") {
+    result$error <- "URL parameter 'gene' cannot be blank"
+    return(result)
+  }
+  result$gene <- gene_raw
+  
+  # Validate and process tx parameter
+  tx_raw <- query$tx
+  if (is.null(tx_raw) || tx_raw == "") {
+    result$error <- "URL parameter 'tx' cannot be blank"
+    return(result)
+  }
+  
+  # Remove version if supplied (e.g., NM_001347423.1 -> NM_001347423)
+  tx_clean <- gsub("\\.\\d+$", "", tx_raw)
+  result$tx <- tx_clean
+  
+  # Validate exon parameter
+  exon_raw <- query$exon
+  if (is.null(exon_raw) || exon_raw == "") {
+    result$error <- "URL parameter 'exon' cannot be blank"
+    return(result)
+  }
+  
+  exon_num <- suppressWarnings(as.numeric(exon_raw))
+  if (is.na(exon_num) || exon_num < 1) {
+    result$error <- paste("URL parameter 'exon' must be >= 1. Got:", exon_raw)
+    return(result)
+  }
+  result$exon <- as.character(exon_num)
+  
+  # Validate site parameter
+  site_raw <- query$site
+  if (is.null(site_raw) || site_raw == "") {
+    result$error <- "URL parameter 'site' cannot be blank"
+    return(result)
+  }
+  
+  site_mapping <- c(
+    "D" = "Donor",
+    "A" = "Acceptor"
+  )
+  
+  if (!site_raw %in% names(site_mapping)) {
+    result$error <- paste("Invalid URL parameter 'site':", site_raw, 
+                         ". Valid values are: D (Donor), A (Acceptor)")
+    return(result)
+  }
+  
+  result$site <- site_mapping[site_raw]
+  
+  # If we made it here, all validations passed
+  result$valid <- TRUE
+  
+  return(result)
 }

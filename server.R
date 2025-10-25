@@ -25,6 +25,11 @@ server <- function(input, output, session) {
                         inputId = 'dbInput',
                         selected = url_params$db)
       
+      # Set the transcript type
+      updateRadioButtons(session = session,
+                        inputId = 'txTypeInput',
+                        selected = url_params$tx_type)
+      
       # Set the splice site type
       updateRadioButtons(session = session,
                         inputId = 'ssTypeInput',
@@ -62,8 +67,19 @@ server <- function(input, output, session) {
     geneInput <- isolate(input$geneInput)
     
     # Check if URL parameter for gene is set
-    if (!is.null(session$userData$url_gene) && session$userData$url_gene %in% genenames) {
-      gene_presel <- session$userData$url_gene
+    if (!is.null(session$userData$url_gene)) {
+      if (session$userData$url_gene %in% genenames) {
+        gene_presel <- session$userData$url_gene
+      } else {
+        # Gene not found - show error
+        showNotification(
+          ui = paste("Gene not found in database:", session$userData$url_gene),
+          type = "error",
+          duration = NULL
+        )
+        gene_presel <- genenames[1]
+        session$userData$url_auto_confirm <- NULL  # Cancel auto-confirm
+      }
       session$userData$url_gene <- NULL  # Clear after use
     } else if (geneInput %in% genenames & geneInput != "") {
       gene_presel <- geneInput
@@ -87,8 +103,19 @@ server <- function(input, output, session) {
     txInput <- isolate(input$txInput)
     
     # Check if URL parameter for transcript is set
-    if (!is.null(session$userData$url_tx) && session$userData$url_tx %in% tx$id) {
-      tx_presel <- session$userData$url_tx
+    if (!is.null(session$userData$url_tx)) {
+      if (session$userData$url_tx %in% tx$id) {
+        tx_presel <- session$userData$url_tx
+      } else {
+        # Transcript not found - show error
+        showNotification(
+          ui = paste("Transcript not found in database:", session$userData$url_tx),
+          type = "error",
+          duration = NULL
+        )
+        tx_presel <- tx_list[1]
+        session$userData$url_auto_confirm <- NULL  # Cancel auto-confirm
+      }
       session$userData$url_tx <- NULL  # Clear after use
     } else if (txInput %in% tx$id & txInput != "") {
       tx_presel <- txInput
@@ -114,22 +141,32 @@ server <- function(input, output, session) {
     
     # Check if URL parameter for exon is set
     if (!is.null(session$userData$url_exon)) {
+      exon_found <- FALSE
       # For hg38, exons have exon_no column; for hg19, id is exon_no
       if (input$dbInput == '300K-RNA (hg38)' && "exon_no" %in% colnames(exons)) {
         # Find exon by exon_no
         matching_exons <- exons[as.character(exons$exon_no) == session$userData$url_exon, ]
         if (nrow(matching_exons) > 0) {
           ex_presel <- matching_exons$id[1]
-        } else {
-          ex_presel <- exons_list[1]
+          exon_found <- TRUE
         }
       } else {
         # For hg19, id is already exon_no
         if (session$userData$url_exon %in% exons$id) {
           ex_presel <- session$userData$url_exon
-        } else {
-          ex_presel <- exons_list[1]
+          exon_found <- TRUE
         }
+      }
+      
+      if (!exon_found) {
+        # Exon not found - show error
+        showNotification(
+          ui = paste("Exon not found for this transcript:", session$userData$url_exon),
+          type = "error",
+          duration = NULL
+        )
+        ex_presel <- exons_list[1]
+        session$userData$url_auto_confirm <- NULL  # Cancel auto-confirm
       }
       session$userData$url_exon <- NULL  # Clear after use
     } else if (exonInput %in% exons$id & exonInput != "") {

@@ -396,7 +396,8 @@ parse_url_params <- function(query) {
     gene = NULL,
     tx = NULL,
     exon = NULL,
-    site = NULL
+    site = NULL,
+    tx_type = NULL
   )
   
   # If no query parameters, return early
@@ -455,6 +456,18 @@ parse_url_params <- function(query) {
   # Remove version if supplied (e.g., NM_001347423.1 -> NM_001347423)
   tx_clean <- gsub("\\.\\d+$", "", tx_raw)
   result$tx <- tx_clean
+  
+  # Detect transcript type from transcript ID
+  # RefSeq: NM_, NR_, XM_, XR_
+  # Ensembl: ENST
+  if (grepl("^(NM_|NR_|XM_|XR_)", tx_clean)) {
+    result$tx_type <- "RefSeq"
+  } else if (grepl("^ENST", tx_clean)) {
+    result$tx_type <- "Ensembl"
+  } else {
+    # Default to RefSeq if can't determine
+    result$tx_type <- "RefSeq"
+  }
   
   # Validate exon parameter
   exon_raw <- query$exon

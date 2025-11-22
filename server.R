@@ -117,7 +117,7 @@ server <- function(input, output, session) {
   observeEvent({
     input$geneInput
   }, {
-    if (!input$geneInput == "" && input$geneInput != last_gene_selection()) {
+    if (nzchar(input$geneInput) && input$geneInput != last_gene_selection()) {
       flog.debug("Selection of Gene: %s", input$geneInput)
       last_gene_selection(input$geneInput)
       
@@ -155,7 +155,7 @@ server <- function(input, output, session) {
     current_key <- paste0(input$txInput, "_", input$ssTypeInput)
     last_key <- paste0(last_transcript_selection(), "_", last_sstype_selection())
     
-    if (!input$txInput == "" && current_key != last_key) {
+    if (nzchar(input$txInput) && current_key != last_key) {
       flog.debug("Selection of Transcript/SS Type: %s / %s", input$txInput, input$ssTypeInput)
       last_transcript_selection(input$txInput)
       last_sstype_selection(input$ssTypeInput)

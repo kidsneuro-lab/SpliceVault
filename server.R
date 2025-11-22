@@ -4,7 +4,7 @@ server <- function(input, output, session) {
   
   #### Initialize caches for dropdown data ####
   genes_cache <- reactiveValues()
-  tissues_cache <- NULL
+  tissues_cache <- reactiveValues(data = NULL)
   
   #### Initialise ####
   observeEvent({
@@ -88,13 +88,13 @@ server <- function(input, output, session) {
     # Tissues list - use cache to avoid redundant queries
     output$tissuesInputUI <- renderUI({
       if (input$dbInput == '300K-RNA (hg38)') {
-        if (is.null(tissues_cache)) {
+        if (is.null(tissues_cache$data)) {
           flog.debug("Fetching tissues from database")
           tissues <- get_tissues()
-          tissues_cache <<- tissues
+          tissues_cache$data <- tissues
         } else {
           flog.debug("Using cached tissues")
-          tissues <- tissues_cache
+          tissues <- tissues_cache$data
         }
         tissues_list <- setNames(c(0, tissues$id), c("All", tissues$display_value))
         session$userData$tissues <- tissues_list

@@ -8,10 +8,8 @@
 --   psql -U [username] -d [database_name] -f performance_indexes.sql
 --
 -- Note: Index creation may take several minutes on large datasets
+-- Note: CONCURRENTLY option prevents locking but cannot be used in transaction
 -- ============================================================================
-
--- Begin transaction to ensure all-or-nothing application
-BEGIN;
 
 -- ============================================================================
 -- Indexes for 300K-RNA (hg38) Database Tables
@@ -74,6 +72,11 @@ ON misspl_app.tissue_missplicing_stats(tissue_id, event_rank);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ref_misspl_event_id 
 ON misspl_app.ref_missplicing_event(misspl_event_id);
 
+-- Optimize variant lookup queries for 300K dataset
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_misspl_events_300k_events_exon_tx 
+ON misspl_app.misspl_events_300k_hg38_events(exon_no, tx_id)
+WHERE splicing_event_class = 'normal splicing';
+
 -- ============================================================================
 -- Indexes for 40K-RNA (hg19) Database Tables
 -- ============================================================================
@@ -92,11 +95,6 @@ ON misspl_app.misspl_events_40k_hg19_tx(gene_name, transcript_type, canonical DE
 -- Optimize event lookups for exon dropdown population
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_misspl_events_40k_gene_tx_id_ss_type 
 ON misspl_app.misspl_events_40k_hg19_events(gene_tx_id, ss_type, exon_no);
-
--- Optimize variant lookup queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_misspl_events_300k_events_exon_tx 
-ON misspl_app.misspl_events_300k_hg38_events(exon_no, tx_id)
-WHERE splicing_event_class = 'normal splicing';
 
 -- ============================================================================
 -- Verification Queries
@@ -125,8 +123,6 @@ FROM pg_indexes
 WHERE schemaname = 'misspl_app'
 AND indexname LIKE 'idx_%'
 ORDER BY tablename, indexname;
-
-COMMIT;
 
 -- ============================================================================
 -- Post-Index Creation Maintenance

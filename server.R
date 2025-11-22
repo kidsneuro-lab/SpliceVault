@@ -2,6 +2,10 @@ source("helpers.R")
 
 server <- function(input, output, session) {
   
+  #### Initialize caches for dropdown data ####
+  genes_cache <- reactiveValues()
+  tissues_cache <- NULL
+  
   #### Initialise ####
   observeEvent({
     input$dbInput
@@ -11,9 +15,18 @@ server <- function(input, output, session) {
     flog.debug("Switching to DB %s", isolate(input$dbInput))
     flog.debug("Switching to Transcript type %s", isolate(input$txTypeInput))
     
-    # Genes list
-    genenames <- get_genes(db = input$dbInput,
-                           transcript_type = tolower(input$txTypeInput))$gene_name
+    # Genes list - use cache to avoid redundant queries
+    cache_key <- paste0(input$dbInput, "_", tolower(input$txTypeInput))
+    
+    if (is.null(genes_cache[[cache_key]])) {
+      flog.debug("Fetching genes from database for %s", cache_key)
+      genenames <- get_genes(db = input$dbInput,
+                             transcript_type = tolower(input$txTypeInput))$gene_name
+      genes_cache[[cache_key]] <- genenames
+    } else {
+      flog.debug("Using cached genes for %s", cache_key)
+      genenames <- genes_cache[[cache_key]]
+    }
     
     geneInput <- isolate(input$geneInput)
     
@@ -72,10 +85,17 @@ server <- function(input, output, session) {
                          selected = ex_presel,
                          server = TRUE)
     
-    # Tissues list
+    # Tissues list - use cache to avoid redundant queries
     output$tissuesInputUI <- renderUI({
       if (input$dbInput == '300K-RNA (hg38)') {
-        tissues <- get_tissues()
+        if (is.null(tissues_cache)) {
+          flog.debug("Fetching tissues from database")
+          tissues <- get_tissues()
+          tissues_cache <<- tissues
+        } else {
+          flog.debug("Using cached tissues")
+          tissues <- tissues_cache
+        }
         tissues_list <- setNames(c(0, tissues$id), c("All", tissues$display_value))
         session$userData$tissues <- tissues_list
         
@@ -91,11 +111,15 @@ server <- function(input, output, session) {
   })
   
   #### Handle selection of gene ####
+  # Store the last gene selection to avoid redundant queries
+  last_gene_selection <- reactiveVal("")
+  
   observeEvent({
     input$geneInput
   }, {
-    if (!input$geneInput == "") {
-      flog.debug("Selection of Gene")
+    if (!input$geneInput == "" && input$geneInput != last_gene_selection()) {
+      flog.debug("Selection of Gene: %s", input$geneInput)
+      last_gene_selection(input$geneInput)
       
       tx <- get_tx(db = isolate(input$dbInput),
                    transcript_type = tolower(isolate(input$txTypeInput)),
@@ -120,12 +144,21 @@ server <- function(input, output, session) {
   })
   
   #### Handle selection of Transcript / SS type ####
+  # Store the last transcript/ss_type selection to avoid redundant queries
+  last_transcript_selection <- reactiveVal("")
+  last_sstype_selection <- reactiveVal("")
+  
   observeEvent({
     input$txInput
     input$ssTypeInput
   }, {
-    if (!input$txInput == "") {
-      flog.debug("Selection of Exon")
+    current_key <- paste0(input$txInput, "_", input$ssTypeInput)
+    last_key <- paste0(last_transcript_selection(), "_", last_sstype_selection())
+    
+    if (!input$txInput == "" && current_key != last_key) {
+      flog.debug("Selection of Transcript/SS Type: %s / %s", input$txInput, input$ssTypeInput)
+      last_transcript_selection(input$txInput)
+      last_sstype_selection(input$ssTypeInput)
       
       exons <- get_exons(db = isolate(input$dbInput),
                          transcript_id = isolate(input$txInput),

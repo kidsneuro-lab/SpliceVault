@@ -5,13 +5,34 @@ on:
 
 jobs:
   deploy-prod:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: prod  # Specifies the GitHub Environment to use
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v5
-      
+
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+      with:
+        # Match renv.lock so older packages compile against the expected R API.
+        r-version: '4.4.3'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libpq-dev unixodbc-dev libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev libpng-dev libtiff-dev libjpeg-dev
+
+    - name: Restore R dependencies
+      uses: r-lib/actions/setup-renv@v2
+
+    - name: Install deployment tooling
+      shell: Rscript {0}
+      run: |
+        stopifnot(as.character(getRversion()) == renv::lockfile_read("renv.lock")$R$Version)
+        # Keep deployment tooling compatible with the locked application packages.
+        renv::install("rsconnect@1.3.4", prompt = FALSE)
+
     - name: Prepare Google Analytics file
       run: |
         cp google-analytics-template.html google-analytics.html
@@ -37,15 +58,24 @@ jobs:
         sed -i -e "s/RELEASE/${{ steps.create_version.outputs.tag }}/" ui.R
 
     - name: Deploy Shiny App
-      uses: Mannyasoh/shinyapps-deploy-github-action@v1.0
-      with:
-          # account and application name (https://<accountName>.shinyapps.io/<appName>)
-          appName: ${{ vars.SHINYAPPS_APP_NAME }}
-          accountName: ${{ vars.SHINYAPPS_ACCOUNT_NAME }}
-
-          # token and secret obtained from https://www.shinyapps.io/admin/#/tokens
-          accountToken: ${{ secrets.SHINYAPPS_TOKEN }}
-          accountSecret: ${{ secrets.SHINYAPPS_SECRET }}
-          
-          # force update if app with same name is already deployed
-          forceUpdate: true
+      shell: Rscript {0}
+      env:
+        SHINYAPPS_APP_NAME: ${{ vars.SHINYAPPS_APP_NAME }}
+        SHINYAPPS_ACCOUNT_NAME: ${{ vars.SHINYAPPS_ACCOUNT_NAME }}
+        SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
+        SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
+      run: |
+        rsconnect::setAccountInfo(
+          name = Sys.getenv("SHINYAPPS_ACCOUNT_NAME"),
+          token = Sys.getenv("SHINYAPPS_TOKEN"),
+          secret = Sys.getenv("SHINYAPPS_SECRET")
+        )
+        rsconnect::deployApp(
+          appDir = ".",
+          appName = Sys.getenv("SHINYAPPS_APP_NAME"),
+          account = Sys.getenv("SHINYAPPS_ACCOUNT_NAME"),
+          server = "shinyapps.io",
+          forceUpdate = TRUE,
+          launch.browser = FALSE,
+          logLevel = "normal"
+        )

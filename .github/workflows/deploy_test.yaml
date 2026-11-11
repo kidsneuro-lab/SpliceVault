@@ -4,6 +4,12 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '**/AGENTS.md'
+      - '**/README.md'
+      - '**/.gitignore'
+      - '**/CLAUDE.md'
+      
   workflow_dispatch:  # This line allows manual triggering of the workflow
 
 jobs:

@@ -27,7 +27,7 @@ The feedback is a google form, located below.
 ## What was this developed on
 
 -   R 4.1+
--   Hosted on <https://www.shinyapps.io/>
+-   Hosted on <https://connect.posit.cloud/>
 -   Refer to `dependencies.R` for list of packages that are required for SpliceVault to operate properly
 
 ## Local installation of SpliceVault

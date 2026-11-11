@@ -26,4 +26,7 @@ R is pinned to 4.4.3 to match `renv.lock`; CI asserts the match. Add packages wi
 
 ## Verifying changes
 
-There is no test suite. Run the app with `./launch.sh` (needs `.env` and DB access) and exercise the changed path in both datasets.
+- Tests drive the server function with `shiny::testServer()` against a fixture database in Docker, reached through the `test` profile in `config-template.yml`. Start it with `docker compose -f tests/fixture/docker-compose.yml up -d --wait`, then run `Rscript tests/testthat.R`. See `tests/README.md`.
+- testthat is test-only: install it with `renv::install("testthat@3.3.2")` and keep it out of `renv.lock` and `dependencies.R`.
+- CI runs the suite (`.github/workflows/test.yaml`) and the test deploy waits for it.
+- For changes the tests don't cover, also run the app with `./launch.sh` (needs `.env` and DB access) and exercise the changed path in both datasets.

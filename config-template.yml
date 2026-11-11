@@ -5,10 +5,20 @@ default:
     port: 5432
     user: 'DB_USER'
     password: 'DB_PASSWORD'
-    
+
 shinyapps:
   dataconnection:
     host: 'DB_HOST'
     port: 5432
     username: 'DB_USER'
     password: 'DB_PASSWORD'
+
+# Fixture database for automated tests (tests/fixture). Local throwaway
+# credentials only; start it with: docker compose -f tests/fixture/docker-compose.yml up -d --wait
+test:
+  dataconnection:
+    dbname: 'missplicing'
+    host: 'localhost'
+    port: 55432
+    user: 'splicevault'
+    password: 'splicevault'

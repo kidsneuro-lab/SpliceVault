@@ -1,0 +1,22 @@
+# Fixture database for the test suite. Start with:
+#   docker compose -f tests/fixture/docker-compose.yml up -d --wait
+# Matches the `test` profile in config-template.yml.
+services:
+  fixture-db:
+    image: postgres:13
+    container_name: splicevault-fixture-db
+    environment:
+      POSTGRES_DB: missplicing
+      POSTGRES_USER: splicevault
+      POSTGRES_PASSWORD: splicevault
+    ports:
+      - "55432:5432"
+    volumes:
+      - ./fixture.sql.gz:/docker-entrypoint-initdb.d/fixture.sql.gz:ro
+    healthcheck:
+      # TCP check: the init-time server listens on the socket only, so this
+      # passes once fixture.sql has loaded and the real server is up.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U splicevault -d missplicing"]
+      interval: 2s
+      timeout: 5s
+      retries: 30

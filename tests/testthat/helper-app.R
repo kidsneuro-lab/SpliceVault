@@ -378,3 +378,12 @@ print_events_table <- function(session) {
     cat(paste0(names(shown), ": ", unlist(shown[i, ], use.names = FALSE)), sep = "\n")
   }
 }
+
+# Number of database queries run while evaluating `expr`, counted by the
+# instrumented connection in db.R. Wrap a user action in a scenario, e.g.
+# count_queries(user_selects(session, "Gene", "HBB")).
+count_queries <- function(expr) {
+  before <- db_query_count()
+  force(expr)
+  db_query_count() - before
+}

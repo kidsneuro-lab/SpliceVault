@@ -120,6 +120,43 @@ dropdown selections, Restore Settings) never reach `input` on their own. The
 helpers record what the server sends and `settle()` plays the browser's part,
 applying those values until nothing changes.
 
+## Query budgets
+
+Each round trip to the remote production database is slow, and the local
+fixture hides that cost. So tests count the queries a user interaction makes
+and assert a budget for it. `count_queries()` (in
+`tests/testthat/helper-app.R`) returns how many queries ran while its
+argument was evaluated. Wrap a user action in a scenario with it:
+
+```r
+expect_equal(count_queries(user_selects(session, "Gene", "HBB")), 2)
+```
+
+The user actions settle the page as the browser would, so the count covers
+everything the action sets off, including the dropdowns that refresh after it.
+
+The count comes from `db.R`, which wraps the RPostgres driver's
+`dbSendQuery()`, so it sees `dbGetQuery()` and `dbExecute()` calls wherever
+they are issued. The counter is per process, so take differences (as
+`count_queries()` does) rather than reading the total.
+`tests/testthat/test-query-count.R` holds the budgets. When an optimisation
+lowers a count, lower its budget to lock the gain in.
+
+## Artificial database latency
+
+To feel the remote round-trip cost while running the app locally, set
+`SPLICEVAULT_DB_LATENCY_MS` to a delay in milliseconds added before every
+query:
+
+```bash
+SPLICEVAULT_DB_LATENCY_MS=150 ./launch.sh
+```
+
+or put `SPLICEVAULT_DB_LATENCY_MS=150` in `.env`. The app logs a warning at
+start-up while it is on. It is off when unset or empty, which is how CI and
+both deploys run: nothing sets it there. An invalid value stops the app at
+start-up.
+
 ## The fixture database
 
 `tests/fixture/fixture.sql.gz` is the production `misspl_app` schema plus the

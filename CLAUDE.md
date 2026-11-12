@@ -20,6 +20,7 @@ R is pinned to 4.4.3 to match `renv.lock`; CI asserts the match. Add packages wi
 ## Querying
 
 - `global.R` opens one global connection, `con`. Helpers take a `db` argument but always query through `con`.
+- `con` comes from `instrumented_postgres()` in `db.R`, which counts queries for test budgets and adds opt-in latency (`SPLICEVAULT_DB_LATENCY_MS`). Build any new connection or pool on it.
 - `db` values are the UI labels `"40K-RNA (hg19)"` and `"300K-RNA (hg38)"`, used as `switch()` keys. The two datasets live in different tables with different column types (e.g. `canonical` is `1`/`0` in 40K, boolean in 300K).
 - Build SQL with `glue_sql(..., .con = con)`
 - Variant lookups call the Ensembl REST VEP endpoint (`get_variant_data_restapi`), which returns errors as `list(error_text, "error", 1000, "")`.

@@ -13,7 +13,7 @@ STAGING=splicevault-fixture-staging
 export STAGING_PORT=55433
 
 docker rm -f "$STAGING" >/dev/null 2>&1 || true
-docker run -d --name "$STAGING" -e POSTGRES_PASSWORD=staging -p "$STAGING_PORT:5432" "$PG_IMAGE" >/dev/null
+docker run -d --name "$STAGING" -e POSTGRES_PASSWORD=staging -p "127.0.0.1:$STAGING_PORT:5432" "$PG_IMAGE" >/dev/null
 trap 'docker rm -f "$STAGING" >/dev/null' EXIT
 
 # TCP check: the init-time server listens on the socket only.
@@ -49,7 +49,12 @@ Rscript tests/fixture/seed_fixture.R
 echo "Writing tests/fixture/fixture.sql.gz"
 # Drop psql \restrict lines so older psql clients (e.g. on CI runners) can load
 # it. gzip -n keeps the output byte-identical when the data has not changed.
-docker exec "$STAGING" pg_dump -U postgres --no-owner --no-privileges -n misspl_app \
-  | sed -E '/^\\(un)?restrict /d' | gzip -n -9 > tests/fixture/fixture.sql.gz
+tmp_fixture=$(mktemp tests/fixture/fixture.sql.gz.XXXXXX)
+if ! docker exec "$STAGING" pg_dump -U postgres --no-owner --no-privileges -n misspl_app \
+  | sed -E '/^\\(un)?restrict /d' | gzip -n -9 > "$tmp_fixture"; then
+  rm -f "$tmp_fixture"
+  exit 1
+fi
+mv "$tmp_fixture" tests/fixture/fixture.sql.gz
 
 ls -lh tests/fixture/fixture.sql.gz

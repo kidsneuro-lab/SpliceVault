@@ -4,35 +4,31 @@ The tests drive the Shiny server function through `shiny::testServer()`
 against a small fixture database. The app reaches it through the `test`
 profile in `config-template.yml`, so no real credentials are needed.
 
-## Running the tests locally
+## Running the tests
 
-Needs Docker and R with the project's renv library, plus testthat:
-
-```bash
-Rscript -e 'renv::install("testthat@3.3.2")'
-```
-
-Start the fixture database (PostgreSQL 13 on port 55432, loaded from
-`tests/fixture/fixture.sql.gz`):
+Needs only Docker. From anywhere in the repository:
 
 ```bash
-docker compose -f tests/fixture/docker-compose.yml up -d --wait
+./run_tests.sh          # every test file
+./run_tests.sh smoke    # only files whose name matches "smoke"
 ```
 
-Run the suite from the repository root:
+The script uses `tests/docker-compose.yml` to:
 
-```bash
-Rscript tests/testthat.R
-```
+1. build the runner image from `tests/Dockerfile` (R 4.4.3, the packages in
+   `renv.lock` and testthat). Docker reuses it until `renv.lock` or the
+   Dockerfile changes.
+2. start a fresh fixture database (PostgreSQL 13, loaded from
+   `tests/fixture/fixture.sql.gz`) and wait for it to be ready.
+3. run `tests/testthat.R` in the runner, with the repository mounted
+   read-only, so code edits need no rebuild.
+4. remove both containers and the database, pass or fail.
 
-Stop and remove the database when done (it reloads from the dump on next start):
+While a run is in progress the database is also published on host port
+55432 (user and password `splicevault`) for debugging with `psql`.
 
-```bash
-docker compose -f tests/fixture/docker-compose.yml down
-```
-
-CI runs the same suite (`.github/workflows/test.yaml`) against a PostgreSQL
-service container, and the test deployment waits for it to pass.
+CI runs the same script (`.github/workflows/test.yaml`) and the test
+deployment waits for it to pass.
 
 ## The fixture database
 

@@ -1,6 +1,5 @@
 # Shared setup for tests that drive the Shiny server function against the
-# fixture database (tests/fixture). Start the database first:
-#   docker compose -f tests/fixture/docker-compose.yml up -d --wait
+# fixture database (tests/fixture). Run them with ./run_tests.sh.
 
 # Resolved once at load time, before any test changes the working directory.
 .app_dir <- normalizePath(testthat::test_path("..", ".."))

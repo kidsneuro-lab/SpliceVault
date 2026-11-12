@@ -53,13 +53,13 @@ DB_PASSWORD=<db password>
 
 ## Running the tests
 
-The automated tests run against a small fixture database in Docker. Start it with:
+The automated tests run in Docker against a small fixture database. With Docker installed, run:
 
 ```bash
-docker compose -f tests/fixture/docker-compose.yml up -d --wait
+./run_tests.sh
 ```
 
-Then run `Rscript tests/testthat.R`. See [`tests/README.md`](tests/README.md) for setup and for reseeding the fixture.
+See [`tests/README.md`](tests/README.md) for setup and for reseeding the fixture.
 
 ## Download Source Data
 

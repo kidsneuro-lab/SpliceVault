@@ -1,0 +1,6 @@
+# The image only needs the renv files; everything else (including config.yml
+# and .env) stays out of the build context.
+*
+!renv.lock
+!.Rprofile
+!renv/activate.R

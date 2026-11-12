@@ -11,51 +11,10 @@ jobs:
   test:
     runs-on: ubuntu-24.04
 
-    services:
-      fixture-db:
-        image: postgres:13  # matches the production server major version
-        env:
-          POSTGRES_DB: missplicing
-          POSTGRES_USER: splicevault
-          POSTGRES_PASSWORD: splicevault
-        ports:
-          - 55432:5432  # same port as tests/fixture/docker-compose.yml and the `test` config profile
-        options: >-
-          --health-cmd "pg_isready -U splicevault -d missplicing"
-          --health-interval 2s
-          --health-timeout 5s
-          --health-retries 30
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
 
-    - name: Set up R
-      uses: r-lib/actions/setup-r@v2
-      with:
-        r-version: '4.4.3'
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev libpq-dev unixodbc-dev libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev libpng-dev libtiff-dev libjpeg-dev postgresql-client
-
-    - name: Restore R dependencies
-      uses: r-lib/actions/setup-renv@v2
-
-    - name: Install test tooling
-      shell: Rscript {0}
-      run: |
-        stopifnot(as.character(getRversion()) == renv::lockfile_read("renv.lock")$R$Version)
-        # Test-only package, kept out of renv.lock so the deployed app is unchanged.
-        renv::install("testthat@3.3.2", prompt = FALSE)
-
-    - name: Seed fixture database
-      env:
-        PGPASSWORD: splicevault
-      run: |
-        gunzip -c tests/fixture/fixture.sql.gz \
-          | psql -h localhost -p 55432 -U splicevault -d missplicing -q -v ON_ERROR_STOP=1 >/dev/null
-
+    # Builds the R test image, starts the fixture database and runs the suite.
     - name: Run tests
-      run: Rscript tests/testthat.R
+      run: ./run_tests.sh

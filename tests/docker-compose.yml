@@ -1,0 +1,35 @@
+# Test run: the fixture database plus the R test runner. Use ./run_tests.sh
+# rather than calling this directly.
+name: splicevault-tests
+
+services:
+  fixture-db:
+    image: postgres:13  # matches the production server major version
+    environment:
+      POSTGRES_DB: missplicing
+      POSTGRES_USER: splicevault
+      POSTGRES_PASSWORD: splicevault
+    ports:
+      - "127.0.0.1:55432:5432"  # for poking at it with psql from the host while debugging
+    volumes:
+      - ./fixture/fixture.sql.gz:/docker-entrypoint-initdb.d/fixture.sql.gz:ro
+    healthcheck:
+      # TCP check: the init-time server listens on the socket only, so this
+      # passes once the dump has loaded and the real server is up.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U splicevault -d missplicing"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  tests:
+    # rocker/r-ver:4.4.3 is amd64 only, so Apple Silicon runs it emulated.
+    platform: linux/amd64
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    volumes:
+      - ..:/app:ro
+    depends_on:
+      fixture-db:
+        condition: service_healthy
+    entrypoint: ["Rscript", "tests/testthat.R"]

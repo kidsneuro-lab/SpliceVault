@@ -1,0 +1,20 @@
+name: Test SpliceVault
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  workflow_call:  # Called by deploy_test.yaml so the test deployment waits for it
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+
+    # Builds the R test image, starts the fixture database and runs the suite.
+    - name: Run tests
+      run: ./run_tests.sh

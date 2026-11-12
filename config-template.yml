@@ -5,10 +5,22 @@ default:
     port: 5432
     user: 'DB_USER'
     password: 'DB_PASSWORD'
-    
+
 shinyapps:
   dataconnection:
     host: 'DB_HOST'
     port: 5432
     username: 'DB_USER'
     password: 'DB_PASSWORD'
+
+# Fixture database for automated tests, as seen from the test container in
+# tests/docker-compose.yml (run them with ./run_tests.sh). Throwaway
+# credentials only. Deploys sed-replace the placeholder names used above, so
+# never use those names in this profile.
+test:
+  dataconnection:
+    dbname: 'missplicing'
+    host: 'fixture-db'
+    port: 5432
+    user: 'splicevault'
+    password: 'splicevault'

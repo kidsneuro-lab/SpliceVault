@@ -13,7 +13,11 @@ on:
   workflow_dispatch:  # This line allows manual triggering of the workflow
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yaml
+
   deploy-test:
+    needs: test  # Only deploy when the test suite passes
     runs-on: ubuntu-24.04
     environment: test  # Specifies the GitHub Environment to use
 

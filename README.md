@@ -51,6 +51,16 @@ DB_PASSWORD=<db password>
 
 5.  Execute `./launch.sh`
 
+## Running the tests
+
+The automated tests run in Docker against a small fixture database. With Docker installed, run:
+
+```bash
+./run_tests.sh
+```
+
+See [`tests/README.md`](tests/README.md) for setup and for reseeding the fixture.
+
 ## Download Source Data
 
 300K-RNA and 40K-RNA are available at the following links:

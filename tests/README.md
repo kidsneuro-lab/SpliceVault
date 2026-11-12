@@ -30,6 +30,19 @@ While a run is in progress the database is also published on host port
 CI runs the same script (`.github/workflows/test.yaml`) and the test
 deployment waits for it to pass.
 
+## Driving the input form
+
+`shiny::testServer()` has no browser, so server updates to inputs (new
+dropdown selections, Restore Settings) never reach `input` on their own.
+`recording_session()` in `tests/testthat/helper-app.R` records what the server
+sends, and `settle()` plays the browser's part: it applies those values (and
+the selected tissue whenever the tissue dropdown renders) until nothing
+changes. Wrap a test in `with_app()`, use `open_app()` to load the form and
+`user_sets()` for each user action, then assert on what the user sees: `dropdown()`, `selected_label()`,
+`tissue_options()` and `js_state()` for enabled buttons.
+`tests/testthat/test-dropdowns.R` pins the dropdown chain, tissue dropdown,
+Generate Table button and Restore Settings this way.
+
 ## The fixture database
 
 `tests/fixture/fixture.sql.gz` is the production `misspl_app` schema plus the

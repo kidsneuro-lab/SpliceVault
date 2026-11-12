@@ -55,6 +55,9 @@ if ! docker exec "$STAGING" pg_dump -U postgres --no-owner --no-privileges -n mi
   rm -f "$tmp_fixture"
   exit 1
 fi
+# mktemp creates the file owner-only; the fixture container's postgres user
+# must be able to read the mounted dump.
+chmod 644 "$tmp_fixture"
 mv "$tmp_fixture" tests/fixture/fixture.sql.gz
 
 ls -lh tests/fixture/fixture.sql.gz

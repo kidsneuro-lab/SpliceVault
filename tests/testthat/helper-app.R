@@ -128,47 +128,12 @@ settle <- function(session, max_rounds = 10) {
   stop("inputs still changing after ", max_rounds, " rounds")
 }
 
-# Sets inputs as a user would, then lets the browser catch up.
-user_sets <- function(session, ...) {
-  session$setInputs(...)
-  settle(session)
-}
-
 # Runs test code inside shiny::testServer() for the app on the fixture
 # database, with a recording session; the code sees `session`, `input` and
 # `output` as the server function does.
 with_app <- function(code) {
   local_test_app()
   shiny::testServer(app_dir(), {{ code }}, session = recording_session())
-}
-
-# Opens the app in Gene/Transcript/Exon mode and waits for the dropdowns to fill.
-open_app <- function(session, db = "300K-RNA (hg38)", tx_type = "RefSeq") {
-  do.call(session$setInputs, initial_inputs(db = db, tx_type = tx_type))
-  settle(session)
-}
-
-# Label of the option currently selected in a server-side selectize input.
-selected_label <- function(session, inputId) {
-  choices <- dropdown(session, inputId)
-  choices$label[choices$value == shiny::isolate(session$input[[inputId]])]
-}
-
-# Value of the option whose label starts with the given exon number.
-exon_value <- function(session, exon_no) {
-  exons <- dropdown(session, "exonInput")
-  as.character(exons$value[exon_numbers(exons$label) == exon_no])
-}
-
-# First word of dropdown labels: the exon number in "3 (g.5227071)", the
-# transcript ID in "NM_000518 (Canonical)".
-label_key <- function(labels) sub(" .*", "", labels)
-exon_numbers <- function(labels) as.integer(label_key(labels))
-
-# Value of the transcript whose label starts with the given transcript ID.
-tx_value <- function(session, tx_id) {
-  txs <- dropdown(session, "txInput")
-  as.character(txs$value[label_key(txs$label) == tx_id])
 }
 
 # Options (label, value) of the rendered tissue dropdown, with the selected
@@ -185,5 +150,126 @@ tissue_options <- function(session) {
   out
 }
 
-# "enable" or "disable": the last shinyjs state the server set for an element.
-js_state <- function(session, id) session$browser$js[[id]]
+# ---------------------------------------------------------------------------
+# The user's view of the form. Scenarios use only the functions below, naming
+# fields, settings and buttons by their labels on screen and options by the
+# text the user sees. Input IDs and database IDs stay in this file.
+# ---------------------------------------------------------------------------
+
+# Dropdowns whose options come from the database.
+dropdown_ids <- c("Gene" = "geneInput", "Transcript" = "txInput",
+                  "Exon" = "exonInput", "Tissue" = "tissuesInput")
+# Radio buttons, whose option labels are also their values.
+radio_ids <- c("Dataset" = "dbInput", "Transcript type" = "txTypeInput",
+               "Splice site" = "ssTypeInput")
+# Sidebar settings.
+setting_ids <- c("Number of Events" = "eventsNoInput", "Show all Events" = "allevents",
+                 "Maximum Number of Exons Skipped" = "esInput",
+                 "Show all Exon Skipping" = "allskips",
+                 "Show Cryptics Within" = "cssInput", "Show all Cryptics" = "allcryptics")
+button_ids <- c("Generate Table" = "confirm", "Restore Settings" = "restore")
+
+set_input <- function(session, id, value) {
+  do.call(session$setInputs, stats::setNames(list(value), id))
+}
+
+field_id <- function(field, ids) {
+  if (!field %in% names(ids)) stop("unknown field '", field, "'; expected one of: ", paste(names(ids), collapse = ", "))
+  ids[[field]]
+}
+
+# Options (label, value) the user can see in a dropdown, or NULL when it is
+# not shown.
+dropdown_options <- function(session, field) {
+  id <- field_id(field, dropdown_ids)
+  if (id == "tissuesInput") return(tissue_options(session))
+  dropdown(session, id)
+}
+
+# The label of the option shown as selected in a dropdown or radio button.
+selected_option <- function(session, field) {
+  if (field %in% names(radio_ids)) return(shiny::isolate(session$input[[radio_ids[[field]]]]))
+  options <- dropdown_options(session, field)
+  value <- shiny::isolate(session$input[[dropdown_ids[[field]]]])
+  options$label[options$value == value]
+}
+
+# The page has loaded in Gene/Transcript/Exon mode on the given dataset and
+# transcript type, but the server has not yet filled the dropdowns.
+app_starts_loading <- function(session, dataset, transcripts) {
+  do.call(session$setInputs, initial_inputs(db = dataset, tx_type = transcripts))
+}
+
+# Opens the app in Gene/Transcript/Exon mode on the given dataset and
+# transcript type, and waits for the dropdowns to fill.
+user_opens_app <- function(session, dataset, transcripts) {
+  app_starts_loading(session, dataset, transcripts)
+  settle(session)
+}
+
+# Picks an option, by the text the user sees, in a dropdown or radio button.
+user_selects <- function(session, field, option) {
+  if (field %in% names(radio_ids)) {
+    set_input(session, radio_ids[[field]], option)
+  } else {
+    options <- dropdown_options(session, field)
+    if (!option %in% options$label) {
+      stop(field, " has no option '", option, "'; it shows: ", paste(options$label, collapse = ", "))
+    }
+    value <- as.character(options$value[options$label == option])
+    set_input(session, dropdown_ids[[field]], value)
+  }
+  settle(session)
+}
+
+# Empties a dropdown, as when the user deletes its selection.
+user_clears <- function(session, field) {
+  set_input(session, field_id(field, dropdown_ids), "")
+  settle(session)
+}
+
+# Moves a slider or ticks/unticks a checkbox in the sidebar.
+user_changes <- function(session, setting, value) {
+  set_input(session, field_id(setting, setting_ids), value)
+  settle(session)
+}
+
+# Clicks a button.
+user_clicks <- function(session, button) {
+  id <- field_id(button, button_ids)
+  clicks <- (shiny::isolate(session$input[[id]]) %||% 0) + 1
+  set_input(session, id, clicks)
+  settle(session)
+}
+
+# Checks the options a dropdown shows, in order, and which one is selected.
+expect_dropdown <- function(session, field, options, selected) {
+  shown <- dropdown_options(session, field)
+  testthat::expect_false(is.null(shown), label = paste(field, "dropdown is hidden"))
+  testthat::expect_equal(shown$label, options, label = paste(field, "options"))
+  expect_selected(session, field, selected)
+}
+
+# Checks which option a dropdown or radio button shows as selected.
+expect_selected <- function(session, field, selected) {
+  testthat::expect_equal(selected_option(session, field), selected,
+                         label = paste(field, "selection"))
+}
+
+# Checks that a dropdown is not shown at all.
+expect_hidden <- function(session, field) {
+  testthat::expect_null(dropdown_options(session, field), label = paste(field, "dropdown"))
+}
+
+# Checks a sidebar setting's value.
+expect_setting <- function(session, setting, value) {
+  testthat::expect_equal(shiny::isolate(session$input[[field_id(setting, setting_ids)]]), value,
+                         label = setting)
+}
+
+# Checks whether a button can be clicked.
+expect_button <- function(session, button, enabled) {
+  state <- session$browser$js[[field_id(button, button_ids)]]
+  testthat::expect_equal(state, if (enabled) "enable" else "disable",
+                         label = paste(button, "button state"))
+}

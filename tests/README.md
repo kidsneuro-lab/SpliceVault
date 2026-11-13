@@ -30,18 +30,49 @@ While a run is in progress the database is also published on host port
 CI runs the same script (`.github/workflows/test.yaml`) and the test
 deployment waits for it to pass.
 
-## Driving the input form
+## Input form scenarios
+
+`tests/testthat/test-form-300k.R` and `test-form-40k.R` pin how the
+Gene/Transcript/Exon form behaves for each dataset: the gene, transcript and
+exon dropdowns, the tissue dropdown, the Generate Table button and Restore
+Settings. Each file is split by the dataset a scenario starts from, and each
+scenario stands alone so a developer or domain expert can read it without the
+rest of the file:
+
+```r
+it("picking a gene lists its transcripts, canonical first and marked, and its acceptor exons", {
+  with_app({
+    # Given
+    user_opens_app(session, dataset = "300K-RNA (hg38)", transcripts = "RefSeq")
+
+    # When
+    user_selects(session, "Gene", "SMN1")
+
+    # Then
+    expect_dropdown(session, "Transcript",
+                    options = c("NM_000344 (Canonical)", "NM_001297715"),
+                    selected = "NM_000344 (Canonical)")
+  })
+})
+```
+
+Conventions:
+
+- Write inputs and expected values out in full, as the exact text the user
+  sees. No loops or lookup tables, even where scenarios repeat.
+- Name fields, settings and buttons by their labels on screen. The actions
+  are `user_opens_app()`, `user_selects()`, `user_clears()`, `user_changes()`
+  and `user_clicks()`; the checks are `expect_dropdown()`, `expect_selected()`,
+  `expect_hidden()`, `expect_setting()` and `expect_button()`. All are in
+  `tests/testthat/helper-app.R`, which is the only place input IDs and
+  database IDs appear.
+- When a scenario pins behaviour that has an open issue, end its name with
+  "(current behaviour, see #NN)" and update it when the issue is fixed.
 
 `shiny::testServer()` has no browser, so server updates to inputs (new
-dropdown selections, Restore Settings) never reach `input` on their own.
-`recording_session()` in `tests/testthat/helper-app.R` records what the server
-sends, and `settle()` plays the browser's part: it applies those values (and
-the selected tissue whenever the tissue dropdown renders) until nothing
-changes. Wrap a test in `with_app()`, use `open_app()` to load the form and
-`user_sets()` for each user action, then assert on what the user sees: `dropdown()`, `selected_label()`,
-`tissue_options()` and `js_state()` for enabled buttons.
-`tests/testthat/test-dropdowns.R` pins the dropdown chain, tissue dropdown,
-Generate Table button and Restore Settings this way.
+dropdown selections, Restore Settings) never reach `input` on their own. The
+helpers record what the server sends and `settle()` plays the browser's part,
+applying those values until nothing changes.
 
 ## The fixture database
 

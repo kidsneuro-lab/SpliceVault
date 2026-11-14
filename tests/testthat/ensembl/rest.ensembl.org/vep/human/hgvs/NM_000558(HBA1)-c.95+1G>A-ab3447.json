@@ -1,0 +1,120 @@
+[
+    {
+        "colocated_variants": [
+            {
+                "start": 176812,
+                "end": 176812,
+                "seq_region_name": "16",
+                "allele_string": "HGMD_MUTATION",
+                "strand": 1,
+                "phenotype_or_disease": 1,
+                "id": "CS002451"
+            },
+            {
+                "strand": 1,
+                "clin_sig_ref_allele": "G",
+                "var_synonyms": {
+                    "ClinVar": [
+                        "RCV003477253",
+                        "VCV002681961",
+                        "RCV005012985"
+                    ]
+                },
+                "allele_string": "G/A/T",
+                "id": "rs1201093320",
+                "phenotype_or_disease": 1,
+                "clin_sig": [
+                    "pathogenic"
+                ],
+                "end": 176812,
+                "seq_region_name": "16",
+                "start": 176812,
+                "clin_sig_allele": "A:pathogenic",
+                "frequencies": {
+                    "A": {
+                        "gnomadg_afr": 0,
+                        "gnomadg_sas": 0.0002194,
+                        "gnomade": 5.085e-06,
+                        "gnomade_sas": 1.248e-05,
+                        "gnomadg": 2.069e-05,
+                        "gnomadg_remaining": 0.0004955,
+                        "gnomadg_ami": 0,
+                        "gnomadg_mid": 0,
+                        "gnomade_amr": 0,
+                        "gnomadg_nfe": 0,
+                        "gnomade_nfe": 2.842e-06,
+                        "gnomade_fin": 0,
+                        "gnomadg_amr": 0,
+                        "gnomade_afr": 3.28e-05,
+                        "gnomade_asj": 0,
+                        "gnomade_eas": 0,
+                        "gnomade_remaining": 3.501e-05,
+                        "gnomadg_fin": 0,
+                        "gnomade_mid": 0,
+                        "gnomadg_eas": 0.000211,
+                        "gnomadg_asj": 0
+                    }
+                }
+            }
+        ],
+        "start": 176812,
+        "most_severe_consequence": "splice_donor_variant",
+        "input": "NM_000558(HBA1):c.95+1G>A",
+        "transcript_consequences": [
+            {
+                "gene_symbol_source": "EntrezGene",
+                "gene_id": "3040",
+                "transcript_id": "NM_000517.6",
+                "used_ref": "G",
+                "biotype": "protein_coding",
+                "consequence_terms": [
+                    "downstream_gene_variant"
+                ],
+                "strand": 1,
+                "distance": 3102,
+                "gene_symbol": "HBA2",
+                "impact": "MODIFIER",
+                "given_ref": "G",
+                "variant_allele": "A"
+            },
+            {
+                "biotype": "protein_coding",
+                "used_ref": "G",
+                "intron": "1/2",
+                "gene_symbol_source": "EntrezGene",
+                "gene_id": "3039",
+                "transcript_id": "NM_000558.5",
+                "variant_allele": "A",
+                "impact": "HIGH",
+                "given_ref": "G",
+                "gene_symbol": "HBA1",
+                "consequence_terms": [
+                    "splice_donor_variant"
+                ],
+                "strand": 1
+            },
+            {
+                "variant_allele": "A",
+                "impact": "MODIFIER",
+                "given_ref": "G",
+                "gene_symbol": "HBQ1",
+                "distance": 3647,
+                "consequence_terms": [
+                    "upstream_gene_variant"
+                ],
+                "strand": 1,
+                "biotype": "protein_coding",
+                "used_ref": "G",
+                "gene_symbol_source": "EntrezGene",
+                "gene_id": "3049",
+                "transcript_id": "NM_005331.5"
+            }
+        ],
+        "allele_string": "G/A",
+        "seq_region_name": "16",
+        "end": 176812,
+        "assembly_name": "GRCh38",
+        "id": "NM_000558(HBA1):c.95+1G>A",
+        "strand": 1
+    }
+]

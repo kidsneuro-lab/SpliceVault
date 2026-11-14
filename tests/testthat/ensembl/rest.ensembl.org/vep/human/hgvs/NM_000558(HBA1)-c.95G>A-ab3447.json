@@ -1,0 +1,116 @@
+[
+    {
+        "transcript_consequences": [
+            {
+                "gene_symbol_source": "EntrezGene",
+                "gene_id": "3040",
+                "transcript_id": "NM_000517.6",
+                "biotype": "protein_coding",
+                "used_ref": "G",
+                "strand": 1,
+                "consequence_terms": [
+                    "downstream_gene_variant"
+                ],
+                "gene_symbol": "HBA2",
+                "distance": 3101,
+                "impact": "MODIFIER",
+                "given_ref": "G",
+                "variant_allele": "A"
+            },
+            {
+                "variant_allele": "A",
+                "codons": "aGg/aAg",
+                "gene_symbol": "HBA1",
+                "strand": 1,
+                "cdna_start": 132,
+                "used_ref": "G",
+                "cdna_end": 132,
+                "gene_id": "3039",
+                "transcript_id": "NM_000558.5",
+                "exon": "1/3",
+                "protein_end": 32,
+                "cds_start": 95,
+                "given_ref": "G",
+                "impact": "MODERATE",
+                "consequence_terms": [
+                    "missense_variant",
+                    "splice_region_variant"
+                ],
+                "sift_prediction": "deleterious",
+                "cds_end": 95,
+                "biotype": "protein_coding",
+                "sift_score": 0,
+                "amino_acids": "R/K",
+                "protein_start": 32,
+                "gene_symbol_source": "EntrezGene"
+            },
+            {
+                "impact": "MODIFIER",
+                "given_ref": "G",
+                "variant_allele": "A",
+                "consequence_terms": [
+                    "upstream_gene_variant"
+                ],
+                "strand": 1,
+                "gene_symbol": "HBQ1",
+                "distance": 3648,
+                "used_ref": "G",
+                "biotype": "protein_coding",
+                "gene_symbol_source": "EntrezGene",
+                "transcript_id": "NM_005331.5",
+                "gene_id": "3049"
+            }
+        ],
+        "allele_string": "G/A",
+        "input": "NM_000558(HBA1):c.95G>A",
+        "most_severe_consequence": "missense_variant",
+        "start": 176811,
+        "colocated_variants": [
+            {
+                "frequencies": {
+                    "A": {
+                        "gnomade_afr": 6.548e-05,
+                        "gnomade_fin": 0,
+                        "gnomade_nfe": 0,
+                        "gnomade_amr": 0,
+                        "gnomade_eas": 0,
+                        "gnomade_asj": 0,
+                        "gnomade_mid": 0,
+                        "gnomade_sas": 0,
+                        "gnomade": 1.451e-06,
+                        "gnomade_remaining": 0
+                    }
+                },
+                "end": 176811,
+                "seq_region_name": "16",
+                "start": 176811,
+                "clin_sig_allele": "A:likely_pathogenic",
+                "id": "rs281864580",
+                "phenotype_or_disease": 1,
+                "clin_sig": [
+                    "likely_pathogenic"
+                ],
+                "strand": 1,
+                "clin_sig_ref_allele": "G",
+                "var_synonyms": {
+                    "ClinVar": [
+                        "RCV005022185",
+                        "VCV003579877"
+                    ],
+                    "HbVar": [
+                        2817
+                    ],
+                    "PhenCode": [
+                        "HbVar.2817"
+                    ]
+                },
+                "allele_string": "G/A/C"
+            }
+        ],
+        "strand": 1,
+        "id": "NM_000558(HBA1):c.95G>A",
+        "assembly_name": "GRCh38",
+        "end": 176811,
+        "seq_region_name": "16"
+    }
+]

@@ -1,0 +1,66 @@
+[
+    {
+        "colocated_variants": [
+            {
+                "end": 5226577,
+                "id": "CM044639",
+                "seq_region_name": "11",
+                "allele_string": "HGMD_MUTATION",
+                "phenotype_or_disease": 1,
+                "start": 5226577,
+                "strand": 1
+            },
+            {
+                "start": 5226577,
+                "strand": 1,
+                "var_synonyms": {
+                    "COSMIC": [
+                        "COSM7930837"
+                    ]
+                },
+                "id": "COSV100092736",
+                "end": 5226577,
+                "seq_region_name": "11",
+                "somatic": 1,
+                "allele_string": "COSMIC_MUTATION",
+                "phenotype_or_disease": 1
+            }
+        ],
+        "strand": -1,
+        "most_severe_consequence": "splice_region_variant",
+        "end": 5226577,
+        "id": "NM_000518(HBB):c.315G>A",
+        "start": 5226577,
+        "input": "NM_000518(HBB):c.315G>A",
+        "assembly_name": "GRCh38",
+        "transcript_consequences": [
+            {
+                "used_ref": "G",
+                "gene_symbol": "HBB",
+                "gene_symbol_source": "EntrezGene",
+                "given_ref": "G",
+                "protein_end": 105,
+                "consequence_terms": [
+                    "splice_region_variant",
+                    "synonymous_variant"
+                ],
+                "cdna_start": 365,
+                "cdna_end": 365,
+                "codons": "agG/agA",
+                "transcript_id": "NM_000518.5",
+                "gene_id": "3043",
+                "biotype": "protein_coding",
+                "variant_allele": "A",
+                "strand": -1,
+                "cds_end": 315,
+                "cds_start": 315,
+                "impact": "LOW",
+                "amino_acids": "R",
+                "exon": "2/3",
+                "protein_start": 105
+            }
+        ],
+        "seq_region_name": "11",
+        "allele_string": "G/A"
+    }
+]

@@ -1,0 +1,63 @@
+[
+    {
+        "start": 177282,
+        "end": 177282,
+        "seq_region_name": "16",
+        "strand": 1,
+        "id": "NM_000558(HBA1):c.301-1G>T",
+        "most_severe_consequence": "splice_acceptor_variant",
+        "allele_string": "G/T",
+        "assembly_name": "GRCh38",
+        "input": "NM_000558(HBA1):c.301-1G>T",
+        "transcript_consequences": [
+            {
+                "gene_id": "3040",
+                "variant_allele": "T",
+                "given_ref": "G",
+                "gene_symbol": "HBA2",
+                "used_ref": "G",
+                "transcript_id": "NM_000517.6",
+                "strand": 1,
+                "gene_symbol_source": "EntrezGene",
+                "distance": 3572,
+                "impact": "MODIFIER",
+                "consequence_terms": [
+                    "downstream_gene_variant"
+                ],
+                "biotype": "protein_coding"
+            },
+            {
+                "variant_allele": "T",
+                "gene_id": "3039",
+                "strand": 1,
+                "transcript_id": "NM_000558.5",
+                "used_ref": "G",
+                "given_ref": "G",
+                "gene_symbol": "HBA1",
+                "consequence_terms": [
+                    "splice_acceptor_variant"
+                ],
+                "impact": "HIGH",
+                "gene_symbol_source": "EntrezGene",
+                "intron": "2/2",
+                "biotype": "protein_coding"
+            },
+            {
+                "gene_id": "3049",
+                "variant_allele": "T",
+                "gene_symbol": "HBQ1",
+                "given_ref": "G",
+                "used_ref": "G",
+                "strand": 1,
+                "transcript_id": "NM_005331.5",
+                "gene_symbol_source": "EntrezGene",
+                "distance": 3177,
+                "consequence_terms": [
+                    "upstream_gene_variant"
+                ],
+                "impact": "MODIFIER",
+                "biotype": "protein_coding"
+            }
+        ]
+    }
+]

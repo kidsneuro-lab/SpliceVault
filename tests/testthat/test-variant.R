@@ -29,6 +29,7 @@ describe("Variant mode on the negative strand (HBB)", {
       # Then
       expect_table_title(session, "Showing top  4 unannotated events in 300K-RNA (hg38) for NM_000518 (HBB) Acceptor 3 (max 2 exons skipped, cryptics within +/-600 nt)")
       expect_first_event(session, "annotated splicing")
+      expect_exports_titled_as_shown(session)
     })
   })
 

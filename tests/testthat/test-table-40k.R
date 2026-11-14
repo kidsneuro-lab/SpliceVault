@@ -34,6 +34,7 @@ describe("40K-RNA (hg19) events table", {
 
       # Then
       expect_snapshot(print_events_table(session))
+      expect_exports_titled_as_shown(session)
     })
   })
 

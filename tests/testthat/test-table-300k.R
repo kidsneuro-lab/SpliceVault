@@ -31,6 +31,7 @@ describe("300K-RNA (hg38) events table, all tissues", {
 
       # Then
       expect_snapshot(print_events_table(session))
+      expect_exports_titled_as_shown(session)
     })
   })
 
@@ -69,6 +70,7 @@ describe("300K-RNA (hg38) events table, one tissue", {
 
       # Then
       expect_snapshot(print_events_table(session))
+      expect_exports_titled_as_shown(session)
     })
   })
 

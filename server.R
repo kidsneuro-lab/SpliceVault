@@ -239,28 +239,18 @@ server <- function(input, output, session) {
       mod_exonInput <- input$exonInput
     }
     
-    if (input$allcryptics == TRUE & input$allskips == TRUE) {
-      settings = ''
-    } else if (input$allcryptics == TRUE & input$allskips == FALSE) {
-      settings = paste0(" (max ", input$esInput, " exons skipped)")
-    } else if (input$allskips == TRUE & input$allcryptics == FALSE) {
-      settings = paste0(" (cryptics within +/-", input$cssInput, ")")
-    } else {
-      settings = paste0(" (max ", input$esInput, " exons skipped, cryptics within +/-", input$cssInput, " nt)")
-    }
-    if (input$allevents == TRUE) {
-      events = "all"
-    } else {
-      events  = paste("top ", input$eventsNoInput)
-    }
-    title <- paste0("Showing ", events, 
-                    " unannotated events in ", input$dbInput,
-                    " for ", gsub(' \\(Canonical\\)', '', mod_txName), " ",
-                    ifelse(input$tissuesInput == 0, "", paste0(" [", names(session$userData$tissues)[session$userData$tissues==input$tissuesInput], "] ")),
-                    "(",mod_geneInput, ")",
-                    " ", mod_ssTypeInput," " , mod_exonName,
-                    settings )
-    
+    tissue <- if (input$tissuesInput == 0) NULL else
+      names(session$userData$tissues)[session$userData$tissues == input$tissuesInput]
+    title <- events_table_title(db = input$dbInput,
+                                transcript = mod_txName,
+                                gene = mod_geneInput,
+                                ss_type = mod_ssTypeInput,
+                                exon = mod_exonName,
+                                events_no = if (input$allevents == FALSE) input$eventsNoInput else NULL,
+                                max_skipped = if (input$allskips == FALSE) input$esInput else NULL,
+                                max_cryptic = if (input$allcryptics == FALSE) input$cssInput else NULL,
+                                tissue = tissue)
+
     list(title = title,
          legend = input$dbInput == '300K-RNA (hg38)' & input$tissuesInput == 0,
          transcript_id = mod_txInput,
@@ -281,58 +271,7 @@ server <- function(input, output, session) {
   table_ms <- eventReactive(request(), {
     req(is.null(request()$error))
     
-    if (input$dbInput == '300K-RNA (hg38)') {
-      db = '300k_hg38'
-      if (input$tissuesInput == 0) {
-        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Position', 
-                         'Samples (GTEx)', 'Samples (SRA)', 'Max Reads (GTEx)', 'Total Samples', 'Accessible Tissues (GTEx)', 'Splice Junction', 'IGV')
-        columnDefs <- list(list(className = 'dt-center', targets = c(0:5,10:12)),
-                           list(className = 'dt-right', targets = c(6:9)),
-                           list(
-                             targets = c(1,2,3),
-                             render = JS(
-                               "function(data, type, row, meta) {",
-                               "return data == 'Yes' ? '<span>&#10003;</span>' : '';",
-                               "}")
-                           ),
-                           list(
-                             targets = 10,
-                             render = JS(
-                               "function(data, type, row, meta) {",
-                               "return data.trim().charAt(data.trim().length-1) == ',' ? data.trim().substr(0, data.trim().length - 1) : data;",
-                               "}")
-                           ))
-        
-        
-      } else {
-        set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Skipped Exons', 'Cryptic Position', 
-                         'Samples (GTEx)', 'Max Reads (GTEx)', 'Splice Junction', 'IGV')
-        columnDefs <- list(list(className = 'dt-center', targets = c(0:4,6:8)),
-                           list(className = 'dt-right', targets = c(5)),
-                           list(
-                             targets = c(1,2),
-                             render = JS(
-                               "function(data, type, row, meta) {",
-                               "return data == 'Yes' ? '<span>&#10003;</span>' : '';",
-                               "}")
-                           ))
-      }
-      genome = 'hg38'
-    } else if (input$dbInput == '40K-RNA (hg19)') {
-      db = '40k_hg19'
-      set_colnames = c('Event', 'Same Frame?', 'GTEx?', 'Intropolis?', 'Skipped Exons', 'Cryptic Position', 
-                       'Samples (GTEx)', 'Samples (Intropolis)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV')
-      columnDefs <- list(list(className = 'dt-center', targets = c(0:5,10:11)),
-                         list(className = 'dt-right', targets = c(9)),
-                         list(
-                           targets = c(1,2,3),
-                           render = JS(
-                             "function(data, type, row, meta) {",
-                             "return data == 'Yes' ? '<span>&#10003;</span>' : '';",
-                             "}")
-                         ))
-      genome = 'hg19'
-    }
+    columns <- events_table_columns(input$dbInput, tissue_selected = input$tissuesInput != 0)
     # NULL leaves a filter off ("Show all").
     max_cryptic <- if (input$allcryptics == FALSE) input$cssInput else NULL
     max_skipped <- if (input$allskips == FALSE) input$esInput else NULL
@@ -348,72 +287,18 @@ server <- function(input, output, session) {
                                   tissue_id = input$tissuesInput,
                                   events_limit = input$eventsNoInput + 1)
     
-    ann_samples <- set_table %>% filter(splicing_event_class == 'normal splicing') %>% pull(sample_count)
-    
-    if (input$dbInput == '300K-RNA (hg38)') {
-      set_table <- set_table %>% 
-        rowwise() %>%
-        mutate(start = min(donor_pos, acceptor_pos),
-               end = max(donor_pos, acceptor_pos)) %>% ungroup() %>% 
-        mutate(sj = paste0(paste(chr, paste(start, end, sep = '-'), sep = ':')),
-               samples_prop = scales::percent(sample_count / ann_samples, accuracy = 0.1)) %>%
-        rowwise() %>%
-        mutate(splicing_event_class = gsub('normal', 'annotated', splicing_event_class),
-               igv = gsub("amp;","",tags$a(href=paste0("http://localhost:60151/goto?locus=", sj, "&genome=", genome), "link")),
-               #rank = row_number(),
-               cryptic_distance = ifelse(cryptic_distance > 0, 
-                                         paste0('+', as.character(cryptic_distance)), 
-                                         as.character(cryptic_distance)),
-               sample_count = paste0(sample_count, ' (', samples_prop, ')')) %>%
-        select(-chr, -donor_pos, -acceptor_pos, -start, -end, -samples_prop)
-    } else {
-      set_table <- set_table %>% 
-        rowwise() %>%
-        mutate(start = min(donor_pos, acceptor_pos),
-               end = max(donor_pos, acceptor_pos)) %>% ungroup() %>% 
-        mutate(sj = paste0(paste(chr, paste(start, end, sep = '-'), sep = ':')),
-               samples_prop = scales::percent(sample_count / ann_samples, accuracy = 0.1)) %>%
-        rowwise() %>%
-        mutate(splicing_event_class = gsub('normal', 'annotated', splicing_event_class),
-               igv = gsub("amp;","",tags$a(href=paste0("http://localhost:60151/goto?locus=", sj, "&genome=", genome), "link")),
-               #rank = row_number(),
-               cryptic_distance = ifelse(cryptic_distance > 0, 
-                                         paste0('+', as.character(cryptic_distance)), 
-                                         as.character(cryptic_distance)),
-               sample_count = paste0(sample_count, ' (', samples_prop, ')')) %>%
-        select(-chr, -donor_pos, -acceptor_pos, -start, -end, -samples_prop)
-    }
-    
-    # http://localhost:port/goto?locus=2:79087958-79087659&genome=hg38
-    if (isolate(input$allcryptics) == TRUE & isolate(input$allskips) == TRUE) {
-      settings = ''
-    } else if (isolate(input$allcryptics) == TRUE & isolate(input$allskips) == FALSE) {
-      settings = paste0(" (max ", isolate(input$esInput), " exons skipped)")
-    } else if (isolate(input$allskips) == TRUE & isolate(input$allcryptics) == FALSE) {
-      settings = paste0(" (cryptics within +/-", isolate(input$cssInput), ")")
-    } else {
-      settings = paste0(" (max ", isolate(input$esInput), " exons skipped, cryptics within +/-", isolate(input$cssInput), " nt)")
-    }
-    if (isolate(input$allevents) == TRUE) {
-      events = "all"
-    } else {
-      events  = paste("top ", isolate(input$eventsNoInput))
-    }
-    title_panel <- paste0("Showing ", events, 
-                          " unannotated events in ", isolate(input$dbInput),
-                          " for ", gsub(' \\(Canonical\\)', '', isolate(input$txInput)),
-                          "(",isolate(input$geneInput), ")",
-                          " ", isolate(input$ssTypeInput)," " ,isolate(input$exonInput),
-                          settings )
+    set_table <- format_events(set_table, columns$genome)
+    title_panel <- request()$title
+
     datatable(
       set_table,
       rownames = FALSE,
       escape = FALSE,
       extensions = "Buttons",
-      colnames = set_colnames,
+      colnames = columns$colnames,
       class = 'cell-border stripe',
       options = list(
-        columnDefs = columnDefs,
+        columnDefs = columns$columnDefs,
         dom = 'Bfrtp',
         buttons = list('copy', list(
           extend = 'collection',

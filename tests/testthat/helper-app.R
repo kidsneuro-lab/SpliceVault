@@ -203,6 +203,57 @@ with_app <- function(code) {
   )
 }
 
+# Runs test code with two users connected to one running app, as on the hosted
+# server: global.R runs once and both sessions share the R process. The code
+# sees `user_a` and `user_b`, two recording sessions; wrap each user's actions
+# and checks in as_user(). shiny::testServer() cannot do this, as it runs one
+# session and refuses to nest.
+with_two_users <- function(code) {
+  local_test_app()
+  app <- shiny::shinyAppDir(app_dir())
+  app$onStart()
+  on.exit(if (!is.null(app$onStop)) app$onStop(), add = TRUE)
+  server <- app$serverFuncSource()
+  user_a <- recording_session()
+  user_b <- recording_session()
+  on.exit({ user_a$close(); user_b$close() }, add = TRUE)
+  start <- function(session) {
+    as_user(session, server(input = session$input, output = session$output, session = session))
+  }
+  start(user_a)
+  start(user_b)
+  with_ensembl_recordings(eval(substitute(code)))
+}
+
+# Evaluates `expr` as `session`'s user, the way shiny::testServer() evaluates
+# test code for its one session.
+as_user <- function(session, expr) {
+  shiny::isolate(shiny::withReactiveDomain(session, {
+    withr::with_options(list(shiny.allowoutputreads = TRUE), expr)
+  }))
+}
+
+# Moves Shiny's reactive context counter forward to just short of a power of
+# ten, as on a server that has been up for a while. The counter is shared by
+# every session in the R process. Shiny invalidates the dependents of an input
+# in order of their context IDs sorted as text, so once the IDs gain a digit
+# ("10003" sorts before "9998") observers of the same input can run in a
+# different order from the one they were created in. 10 short leaves room for
+# the few contexts a click opens before its first observer runs.
+ids_about_to_gain_a_digit <- function() {
+  reactive_env <- shiny:::.getReactiveEnvironment()
+  next_power <- 10^(floor(log10(reactive_env$.nextId + 100)) + 1)
+  reactive_env$.nextId <- as.integer(next_power - 10)
+}
+
+# Checks the Splice Junction of the first row of the table, e.g.
+# "chr11:5226799-5226929".
+expect_first_splice_junction <- function(session, junction) {
+  shown <- events_table(session)
+  testthat::expect_gt(nrow(shown), 0, label = "events shown")
+  testthat::expect_equal(shown$`Splice Junction`[1], junction, label = "first splice junction")
+}
+
 # Options (label, value) of the rendered tissue dropdown, with the selected
 # value as the "selected" attribute, or NULL when no dropdown is shown.
 tissue_options <- function(session) {
@@ -242,11 +293,18 @@ events_table <- function(session) {
 # The text above the table: the title, then the accessible tissues legend
 # when one is shown.
 table_heading <- function(session) {
-  # The server clears the legend by assigning NULL to the output, which a
-  # mock session reports as a silent error.
-  legend <- tryCatch(session$getOutput("clinAccessTissues"), shiny.silent.error = function(e) NULL)
+  legend <- shown_output(session, "clinAccessTissues")
   legend <- if (is.null(legend)) character(0) else gsub("<[^>]*>", "", as.character(legend$html))
   c(session$getOutput("table_title"), legend)
+}
+
+# An output's value, or NULL when the browser shows nothing for it: the server
+# never defined it, or cleared it, which a mock session reports as a silent
+# error.
+shown_output <- function(session, name) {
+  tryCatch(session$getOutput(name),
+           shiny.silent.error = function(e) NULL,
+           error = function(e) if (grepl("hasn't been defined yet", conditionMessage(e))) NULL else stop(e))
 }
 
 # ---------------------------------------------------------------------------
@@ -382,6 +440,13 @@ expect_enabled <- function(session, control, enabled) {
 # Checks the title shown above the events table.
 expect_table_title <- function(session, title) {
   testthat::expect_equal(session$getOutput("table_title"), title, label = "table title")
+}
+
+# Checks that no events table is shown, nor the accessible tissues legend
+# that goes with it.
+expect_no_table <- function(session) {
+  testthat::expect_null(shown_output(session, "table_ms"), label = "events table")
+  testthat::expect_length(table_heading(session)[-1], 0)  # the legend
 }
 
 # Checks the Event shown in the first row of the table.

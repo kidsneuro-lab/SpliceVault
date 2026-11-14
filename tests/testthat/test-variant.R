@@ -13,7 +13,8 @@
 # on the negative strand and HBA1 on the positive strand. An exonic variant
 # resolves to the nearest splice site of its exon; + resolves to the donor of
 # the exon before the intron and - to the acceptor of the exon after it.
-# An input that cannot be resolved shows an error message as the title.
+# An input that cannot be resolved shows an error message as the title and
+# no table, without querying the database.
 
 describe("Variant mode on the negative strand (HBB)", {
   it("an exonic variant at the start of exon 3 resolves to the exon 3 acceptor", {
@@ -162,10 +163,12 @@ describe("Variant mode with input that cannot be resolved", {
       user_enters_variant(session, "NM_000518:c.316C>T")
 
       # When
-      user_clicks(session, "Generate Table")
+      queries <- count_queries(user_clicks(session, "Generate Table"))
 
       # Then
       expect_table_title(session, "No transcript accession matching 'NM_000518:c.316C>T' identified. Please enter a valid ENSEMBL or RefSeq transcript (e.g. NM_004006.3).")
+      expect_no_table(session)
+      expect_equal(queries, 0, label = "database queries")
     })
   })
 
@@ -176,10 +179,12 @@ describe("Variant mode with input that cannot be resolved", {
       user_enters_variant(session, "NM_0005:c.316C>T")
 
       # When
-      user_clicks(session, "Generate Table")
+      queries <- count_queries(user_clicks(session, "Generate Table"))
 
       # Then
       expect_table_title(session, "No transcript accession matching 'NM_0005:c.316C>T' identified. Please enter a valid ENSEMBL or RefSeq transcript (e.g. NM_004006.3).")
+      expect_no_table(session)
+      expect_equal(queries, 0, label = "database queries")
     })
   })
 
@@ -190,10 +195,12 @@ describe("Variant mode with input that cannot be resolved", {
       user_enters_variant(session, "DUMMY_VALUE")
 
       # When
-      user_clicks(session, "Generate Table")
+      queries <- count_queries(user_clicks(session, "Generate Table"))
 
       # Then
       expect_table_title(session, "No transcript accession matching 'DUMMY_VALUE' identified. Please enter a valid ENSEMBL or RefSeq transcript (e.g. NM_004006.3).")
+      expect_no_table(session)
+      expect_equal(queries, 0, label = "database queries")
     })
   })
 
@@ -204,10 +211,12 @@ describe("Variant mode with input that cannot be resolved", {
       user_enters_variant(session, "NM_000518.5:c.316A>T")
 
       # When
-      user_clicks(session, "Generate Table")
+      queries <- count_queries(user_clicks(session, "Generate Table"))
 
       # Then
       expect_table_title(session, "Incorrect reference allele provided: (A). Correct reference allele is: (C). Ensure you have selected the correct transcript. You entered: NM_000518.5")
+      expect_no_table(session)
+      expect_equal(queries, 0, label = "database queries")
     })
   })
 
@@ -218,10 +227,12 @@ describe("Variant mode with input that cannot be resolved", {
       user_enters_variant(session, "NM_9999999.1:c.316C>T")
 
       # When
-      user_clicks(session, "Generate Table")
+      queries <- count_queries(user_clicks(session, "Generate Table"))
 
       # Then
       expect_table_title(session, "No transcript accession matching NM_9999999.1 identified. Please enter a valid ENSEMBL or RefSeq transcript.(e.g. NM_004006.3)")
+      expect_no_table(session)
+      expect_equal(queries, 0, label = "database queries")
     })
   })
 
@@ -232,10 +243,12 @@ describe("Variant mode with input that cannot be resolved", {
       user_enters_variant(session, "NM_000518.5:c.9999C>T")
 
       # When
-      user_clicks(session, "Generate Table")
+      queries <- count_queries(user_clicks(session, "Generate Table"))
 
       # Then
       expect_table_title(session, "Unable to map the cDNA coordinates for 'NM_000518' Please double check your input.")
+      expect_no_table(session)
+      expect_equal(queries, 0, label = "database queries")
     })
   })
 
@@ -246,10 +259,29 @@ describe("Variant mode with input that cannot be resolved", {
       user_enters_variant(session, "NM_000518.5:c.316")
 
       # When
-      user_clicks(session, "Generate Table")
+      queries <- count_queries(user_clicks(session, "Generate Table"))
 
       # Then
       expect_table_title(session, "An unknown error occurred. Please double check your input: 'NM_000518:c.316'.")
+      expect_no_table(session)
+      expect_equal(queries, 0, label = "database queries")
+    })
+  })
+
+  it("a failed lookup after a successful one clears the table", {
+    with_app({
+      # Given
+      user_opens_app(session)
+      user_enters_variant(session, "NM_000518.5(HBB):c.316C>T")
+      user_clicks(session, "Generate Table")
+      user_enters_variant(session, "DUMMY_VALUE")
+
+      # When
+      user_clicks(session, "Generate Table")
+
+      # Then
+      expect_table_title(session, "No transcript accession matching 'DUMMY_VALUE' identified. Please enter a valid ENSEMBL or RefSeq transcript (e.g. NM_004006.3).")
+      expect_no_table(session)
     })
   })
 })

@@ -195,6 +195,38 @@ tissue_options <- function(session) {
   out
 }
 
+# The events table as sent to the browser: a data frame with the column
+# headers the user sees, one row per event. Cells hold the values DT receives,
+# before its column renderers run in the browser (they show "Yes" as a tick and
+# "No" as blank, and trim a trailing comma from the accessible tissues). Empty
+# cells are "".
+events_table <- function(session) {
+  x <- jsonlite::fromJSON(session$getOutput("table_ms"), simplifyVector = FALSE)$x
+  headers <- regmatches(x$container, gregexpr("<th>[^<]*</th>", x$container))[[1]]
+  headers <- gsub("</?th>", "", headers)
+  if (length(x$data) == 0) {
+    out <- as.data.frame(stats::setNames(rep(list(character(0)), length(headers)), headers),
+                         stringsAsFactors = FALSE, check.names = FALSE)
+    return(out)
+  }
+  columns <- lapply(x$data, function(column) {
+    vapply(column, function(cell) if (is.null(cell)) "" else as.character(cell), character(1))
+  })
+  out <- as.data.frame(columns, stringsAsFactors = FALSE, col.names = paste0("V", seq_along(columns)))
+  names(out) <- headers
+  out
+}
+
+# The text above the table: the title, then the accessible tissues legend
+# when one is shown.
+table_heading <- function(session) {
+  # The server clears the legend by assigning NULL to the output, which a
+  # mock session reports as a silent error.
+  legend <- tryCatch(session$getOutput("clinAccessTissues"), shiny.silent.error = function(e) NULL)
+  legend <- if (is.null(legend)) character(0) else gsub("<[^>]*>", "", as.character(legend$html))
+  c(session$getOutput("table_title"), legend)
+}
+
 # ---------------------------------------------------------------------------
 # The user's view of the form. Scenarios use only the functions below, naming
 # fields, settings and buttons by their labels on screen and options by the
@@ -317,4 +349,32 @@ expect_enabled <- function(session, control, enabled) {
   id <- field_id(control, c(button_ids, setting_ids))
   testthat::expect_equal(session$browser$js[[id]], if (enabled) "enable" else "disable",
                          label = paste(control, "state"))
+}
+
+# Checks the title shown above the events table.
+expect_table_title <- function(session, title) {
+  testthat::expect_equal(session$getOutput("table_title"), title, label = "table title")
+}
+
+# Checks which events the table lists, in order, by the columns given (named
+# by their headers on screen), e.g.
+#   expect_events(session, data.frame(Event = ..., `Cryptic Position` = ..., check.names = FALSE))
+expect_events <- function(session, events) {
+  shown <- events_table(session)
+  missing <- setdiff(names(events), names(shown))
+  if (length(missing)) stop("the table has no column ", paste0("'", missing, "'", collapse = ", "))
+  testthat::expect_equal(shown[names(events)], events, ignore_attr = TRUE, label = "events shown")
+}
+
+# Prints the events table as the user sees it, for expect_snapshot(): the
+# heading, then each event as "Column: value" lines, so a change shows up as
+# a readable diff of the cells that moved.
+print_events_table <- function(session) {
+  cat(table_heading(session), sep = "\n")
+  shown <- events_table(session)
+  cat("\n", nrow(shown), " rows\n", sep = "")
+  for (i in seq_len(nrow(shown))) {
+    cat("\n#", i, "\n", sep = "")
+    cat(paste0(names(shown), ": ", unlist(shown[i, ], use.names = FALSE)), sep = "\n")
+  }
 }

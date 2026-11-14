@@ -333,29 +333,18 @@ server <- function(input, output, session) {
                          ))
       genome = 'hg19'
     }
-    if (input$allcryptics == FALSE) {
-      cryp_filt = paste0(" AND (ABS(cryptic_distance) <= ", gsub('\\+/-| nt', '', input$cssInput), " OR cryptic_distance IS NULL)")
-    } else {
-      cryp_filt = ""
-    }
-    if (input$allskips == FALSE) {
-      es_filt = paste0(" AND (skipped_exons_count <= ", input$esInput, " OR skipped_exons_count IS NULL)")
-    } else {
-      es_filt = ""
-    }
-    if (input$allevents == FALSE) {
-      event_filt = paste0(" LIMIT ", input$eventsNoInput + 1)
-    } else {
-      event_filt = ""
-    }
-    
-    set_table <- get_misspl_stats(db = input$dbInput, 
-                                  ss_type = request()$ss_type, 
-                                  exon_id = request()$exon_id, 
-                                  transcript_id = request()$transcript_id, 
-                                  cryp_filt = cryp_filt, 
-                                  es_filt = es_filt, 
-                                  event_filt = event_filt, 
+    # NULL leaves a filter off ("Show all").
+    max_cryptic <- if (input$allcryptics == FALSE) input$cssInput else NULL
+    max_skipped <- if (input$allskips == FALSE) input$esInput else NULL
+    limit <- if (input$allevents == FALSE) input$eventsNoInput + 1 else NULL
+
+    set_table <- get_misspl_stats(db = input$dbInput,
+                                  ss_type = request()$ss_type,
+                                  exon_id = request()$exon_id,
+                                  transcript_id = request()$transcript_id,
+                                  max_cryptic = max_cryptic,
+                                  max_skipped = max_skipped,
+                                  limit = limit,
                                   tissue_id = input$tissuesInput,
                                   events_limit = input$eventsNoInput + 1)
     

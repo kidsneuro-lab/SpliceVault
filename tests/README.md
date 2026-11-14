@@ -9,8 +9,9 @@ profile in `config-template.yml`, so no real credentials are needed.
 Needs only Docker. From anywhere in the repository:
 
 ```bash
-./run_tests.sh          # every test file
-./run_tests.sh smoke    # only files whose name matches "smoke"
+./run_tests.sh                      # every test file
+./run_tests.sh smoke                # only files whose name matches "smoke"
+./run_tests.sh --update-snapshots   # record new and changed snapshots
 ```
 
 The script uses `tests/docker-compose.yml` to:
@@ -21,7 +22,8 @@ The script uses `tests/docker-compose.yml` to:
 2. start a fresh fixture database (PostgreSQL 13, loaded from
    `tests/fixture/fixture.sql.gz`) and wait for it to be ready.
 3. run `tests/testthat.R` in the runner, with the repository mounted
-   read-only, so code edits need no rebuild.
+   read-only, so code edits need no rebuild. `tests/testthat/_snaps` is
+   mounted writable, since testthat rewrites snapshot files as it goes.
 4. remove both containers and the database, pass or fail.
 
 While a run is in progress the database is also published on host port
@@ -81,7 +83,37 @@ Conventions:
   database IDs appear.
 - When a scenario pins behaviour that has an open issue, end its name with
   "(current behaviour, see #NN)" and update it when the issue is fixed.
-- Events table contents belong to the table tests (#44), not here.
+- Events table contents belong to the table tests, not here.
+
+## Events table scenarios
+
+`tests/testthat/test-table-300k.R` and `test-table-40k.R` pin the events
+table as the user sees it after clicking Generate Table, on one anchor splice
+site per dataset (named at the top of each file):
+
+- snapshots of the whole table, with default settings and with every "Show
+  all" box ticked, in all tissues and (300K-RNA) one tissue
+- one scenario per filter ("Number of Events", "Maximum Number of Exons
+  Skipped", "Show Cryptics Within"), checking the title and the events listed
+- a splice site where only the annotated event is left, and (300K-RNA) a
+  tissue with no events at the splice site
+
+The checks are `expect_table_title()` and `expect_events()`, which compares
+the columns you name (by their headers on screen) row by row. Snapshots use
+`expect_snapshot(print_events_table(session))`, which prints the title, the
+accessible tissues legend and every cell of every row. Cells hold the values
+sent to the browser: DT then shows "Yes" as a tick and "No" as blank, and
+trims the trailing comma from the accessible tissues.
+
+Snapshots live in `tests/testthat/_snaps/`. A run fails on a missing or
+changed snapshot and leaves a `.new.md` file beside a changed one. When a
+change is intended, run `./run_tests.sh --update-snapshots` and review the
+change with `git diff`. Reseeding the fixture database changes them too.
+
+Keep anchor splice sites free of tied sample counts: the table is ordered by
+sample count alone, so tied events can come back in any order (#67). A
+missing annotated event makes the table error today, so it is not pinned
+(#66).
 
 `shiny::testServer()` has no browser, so server updates to inputs (new
 dropdown selections, Restore Settings) never reach `input` on their own. The
@@ -117,4 +149,5 @@ tests/fixture/seed.sh
 It copies the production schema and the rows for the genes listed in
 `tests/fixture/seed_fixture.R` into a throwaway container, then writes
 `tests/fixture/fixture.sql.gz`. Set `SEED_SOURCE_CONFIG` to read a different
-`config.yml` profile. Rerun the tests after reseeding.
+`config.yml` profile. Rerun the tests after reseeding, and review the snapshot changes with
+`./run_tests.sh --update-snapshots` and `git diff`.

@@ -30,6 +30,64 @@ While a run is in progress the database is also published on host port
 CI runs the same script (`.github/workflows/test.yaml`) and the test
 deployment waits for it to pass.
 
+## Input form scenarios
+
+Three files pin how the form behaves today, in scenarios a developer or
+domain expert can read one at a time:
+
+- `tests/testthat/test-ui.R`: what the page opens with (Variant tab, default
+  settings, tissue list, dropdowns filled behind the Variant tab), greying out
+  of sliders by the "Show all" boxes, Restore Settings and the Generate Table
+  button. Runs on the page defaults (300K-RNA, RefSeq).
+- `tests/testthat/test-300k.R` and `test-40k.R`: the gene, transcript and
+  exon dropdowns on each dataset, for RefSeq and Ensembl, including switching
+  dataset, transcript type, transcript, gene and splice site, plus the
+  dataset's tissue dropdown behaviour.
+
+```r
+it("picking another transcript lists its exons, and the exon goes back to the first exon", {
+  with_app({
+    # Given
+    user_opens_app(session)
+    user_selects(session, "Tab", "Gene/Transcript/Exon")
+    user_selects(session, "Exon", "3 (g.1032391)")
+
+    # When
+    user_selects(session, "Transcript", "NM_001303499")
+
+    # Then
+    expect_selected(session, "Transcript", "NM_001303499")
+    expect_dropdown(session, "Exon", options = c("2 (g.1031070)", ...), selected = "2 (g.1031070)")
+  })
+})
+```
+
+Conventions:
+
+- Write inputs and expected values out in full, as the exact text the user
+  sees. No loops or lookup tables, even where scenarios repeat.
+- The app opens as the real page does: `user_opens_app()` starts from the
+  defaults in `ui.R` (read from the rendered page), on the Variant tab.
+  Dropdown scenarios select the Gene/Transcript/Exon tab, then the dataset and
+  transcript type they need.
+- Switch scenarios start from CNN2, its canonical transcript and the second
+  exon in the dropdown, so a reset to the first exon is visible.
+- Name fields, settings and buttons by their labels on screen. The actions
+  are `user_opens_app()`, `user_selects()` (dropdowns, tabs and radio
+  buttons), `user_clears()`, `user_changes()` and `user_clicks()`; the checks
+  are `expect_dropdown()`, `expect_selected()`, `expect_hidden()`,
+  `expect_setting()` and `expect_enabled()`. All are in
+  `tests/testthat/helper-app.R`, which is the only place input IDs and
+  database IDs appear.
+- When a scenario pins behaviour that has an open issue, end its name with
+  "(current behaviour, see #NN)" and update it when the issue is fixed.
+- Events table contents belong to the table tests (#44), not here.
+
+`shiny::testServer()` has no browser, so server updates to inputs (new
+dropdown selections, Restore Settings) never reach `input` on their own. The
+helpers record what the server sends and `settle()` plays the browser's part,
+applying those values until nothing changes.
+
 ## The fixture database
 
 `tests/fixture/fixture.sql.gz` is the production `misspl_app` schema plus the

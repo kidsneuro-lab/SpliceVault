@@ -9,8 +9,12 @@
 db_instrumentation <- new.env()
 db_instrumentation$queries <- 0L
 
-# Total queries run by this R process so far. Tests take differences of it
-# (see count_queries() in tests/testthat/helper-app.R).
+# Queries the app has issued so far in this R process. The setup statements
+# RPostgres runs inside dbConnect() (date style, time zone, type map) are
+# deliberately left out: they are driver overhead per connection, not app
+# queries, and counting them would make budgets depend on when a connection
+# opens. Tests take differences of it (see count_queries() in
+# tests/testthat/helper-app.R).
 db_query_count <- function() db_instrumentation$queries
 
 # Artificial delay per query, in seconds, from SPLICEVAULT_DB_LATENCY_MS.

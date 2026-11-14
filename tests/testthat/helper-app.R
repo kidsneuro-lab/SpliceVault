@@ -442,6 +442,20 @@ expect_table_title <- function(session, title) {
   testthat::expect_equal(session$getOutput("table_title"), title, label = "table title")
 }
 
+# Checks that the Excel, CSV and PDF downloads are headed with the title shown
+# above the events table, so an exported table describes its own query.
+expect_exports_titled_as_shown <- function(session) {
+  x <- jsonlite::fromJSON(session$getOutput("table_ms"), simplifyVector = FALSE)$x
+  downloads <- Filter(function(b) is.list(b) && identical(b$text, "Download"), x$options$buttons)[[1]]$buttons
+  titles <- stats::setNames(vapply(downloads, function(b) b$messageTop, character(1)),
+                            vapply(downloads, function(b) b$extend, character(1)))
+  testthat::expect_named(titles, c("excel", "csv", "pdf"))
+  for (format in names(titles)) {
+    testthat::expect_equal(titles[[format]], session$getOutput("table_title"),
+                           label = paste(format, "download title"))
+  }
+}
+
 # Checks that no events table is shown, nor the accessible tissues legend
 # that goes with it.
 expect_no_table <- function(session) {
@@ -486,4 +500,17 @@ count_queries <- function(expr) {
   before <- db_query_count()
   force(expr)
   db_query_count() - before
+}
+
+# The app's helper functions (helpers.R), for tests of functions that need no
+# database or session. Loaded once per test run, with the app's packages.
+.helpers <- new.env()
+app_helpers <- function() {
+  if (is.null(.helpers$env)) {
+    withr::with_dir(app_dir(), suppressPackageStartupMessages(source("dependencies.R")))
+    env <- new.env(parent = globalenv())
+    sys.source(file.path(app_dir(), "helpers.R"), envir = env)
+    .helpers$env <- env
+  }
+  .helpers$env
 }

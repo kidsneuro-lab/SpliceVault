@@ -404,3 +404,96 @@ get_variant_sql_codes <- function(ss_type = NULL, exon_id = NULL, transcript_id 
   res <- dbGetQuery(con, table_query)
   return(as.list(res))
 }
+
+# The title shown above the events table and at the top of its exports. It
+# describes the query: how many events, the dataset, transcript, tissue (NULL
+# for all tissues), gene, splice site and exon, then the exon skipping and
+# cryptic filters that are on (a NULL maximum means "Show all"). A NULL
+# events_no means "Show all events". The spacing is kept exactly as users
+# have always seen it.
+events_table_title <- function(db, transcript, gene, ss_type, exon, events_no = NULL,
+                               max_skipped = NULL, max_cryptic = NULL, tissue = NULL) {
+  settings <- if (is.null(max_cryptic) && is.null(max_skipped)) {
+    ''
+  } else if (is.null(max_cryptic)) {
+    paste0(" (max ", max_skipped, " exons skipped)")
+  } else if (is.null(max_skipped)) {
+    paste0(" (cryptics within +/-", max_cryptic, ")")
+  } else {
+    paste0(" (max ", max_skipped, " exons skipped, cryptics within +/-", max_cryptic, " nt)")
+  }
+  events <- if (is.null(events_no)) "all" else paste("top ", events_no)
+  tissue <- if (is.null(tissue)) "" else paste0(" [", tissue, "] ")
+  paste0("Showing ", events,
+         " unannotated events in ", db,
+         " for ", gsub(' \\(Canonical\\)', '', transcript), " ",
+         tissue,
+         "(", gene, ")",
+         " ", ss_type, " ", exon,
+         settings)
+}
+
+# How the events table shows each dataset's columns: the headers, DT column
+# definitions and the genome build for IGV links. 300K-RNA (hg38) drops its
+# SRA and accessible tissue columns when one tissue is selected.
+events_table_columns <- function(db, tissue_selected) {
+  tick <- function(targets) list(
+    targets = targets,
+    render = JS(
+      "function(data, type, row, meta) {",
+      "return data == 'Yes' ? '<span>&#10003;</span>' : '';",
+      "}"))
+  switch(db,
+         "300K-RNA (hg38)" = if (!tissue_selected) {
+           list(colnames = c('Event', 'Same Frame?', 'GTEx?', 'SRA?', 'Skipped Exons', 'Cryptic Position',
+                             'Samples (GTEx)', 'Samples (SRA)', 'Max Reads (GTEx)', 'Total Samples', 'Accessible Tissues (GTEx)', 'Splice Junction', 'IGV'),
+                columnDefs = list(list(className = 'dt-center', targets = c(0:5,10:12)),
+                                  list(className = 'dt-right', targets = c(6:9)),
+                                  tick(c(1,2,3)),
+                                  list(
+                                    targets = 10,
+                                    render = JS(
+                                      "function(data, type, row, meta) {",
+                                      "return data.trim().charAt(data.trim().length-1) == ',' ? data.trim().substr(0, data.trim().length - 1) : data;",
+                                      "}"))),
+                genome = 'hg38')
+         } else {
+           list(colnames = c('Event', 'Same Frame?', 'GTEx?', 'Skipped Exons', 'Cryptic Position',
+                             'Samples (GTEx)', 'Max Reads (GTEx)', 'Splice Junction', 'IGV'),
+                columnDefs = list(list(className = 'dt-center', targets = c(0:4,6:8)),
+                                  list(className = 'dt-right', targets = c(5)),
+                                  tick(c(1,2))),
+                genome = 'hg38')
+         },
+         "40K-RNA (hg19)" = list(
+           colnames = c('Event', 'Same Frame?', 'GTEx?', 'Intropolis?', 'Skipped Exons', 'Cryptic Position',
+                        'Samples (GTEx)', 'Samples (Intropolis)', 'Max Reads (GTEx)', 'Total Samples', 'Splice Junction', 'IGV'),
+           columnDefs = list(list(className = 'dt-center', targets = c(0:5,10:11)),
+                             list(className = 'dt-right', targets = c(9)),
+                             tick(c(1,2,3))),
+           genome = 'hg19'))
+}
+
+# Turns events from get_misspl_stats() into the rows the events table shows,
+# for either dataset: the splice junction and its IGV link for the given
+# genome build, sample counts with their percentage of the annotated event's
+# samples, "annotated" for "normal" splicing and a "+" before positive cryptic
+# distances.
+format_events <- function(rows, genome) {
+  ann_samples <- rows %>% filter(splicing_event_class == 'normal splicing') %>% pull(sample_count)
+
+  rows %>%
+    rowwise() %>%
+    mutate(start = min(donor_pos, acceptor_pos),
+           end = max(donor_pos, acceptor_pos)) %>% ungroup() %>%
+    mutate(sj = paste0(paste(chr, paste(start, end, sep = '-'), sep = ':')),
+           samples_prop = scales::percent(sample_count / ann_samples, accuracy = 0.1)) %>%
+    rowwise() %>%
+    mutate(splicing_event_class = gsub('normal', 'annotated', splicing_event_class),
+           igv = gsub("amp;","",tags$a(href=paste0("http://localhost:60151/goto?locus=", sj, "&genome=", genome), "link")),
+           cryptic_distance = ifelse(cryptic_distance > 0,
+                                     paste0('+', as.character(cryptic_distance)),
+                                     as.character(cryptic_distance)),
+           sample_count = paste0(sample_count, ' (', samples_prop, ')')) %>%
+    select(-chr, -donor_pos, -acceptor_pos, -start, -end, -samples_prop)
+}

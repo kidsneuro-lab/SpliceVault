@@ -23,12 +23,15 @@ get_genes <- function(db, transcript_type) {
 get_tx <- function(db, transcript_type, gene_name) {
   switch (db,
           "40K-RNA (hg19)" = {
-            tx_query <- paste0("SELECT tx_id || CASE WHEN canonical = 1 THEN ' (Canonical)' ELSE '' END AS display_value,
+            tx_query <- glue_sql("SELECT tx_id || CASE WHEN canonical = 1 THEN ' (Canonical)' ELSE '' END AS display_value,
                              tx_id AS id
                              FROM misspl_app.misspl_events_40k_hg19_tx
-                             WHERE gene_name = '",gene_name, "' 
-                             AND transcript_type = '",  transcript_type, "'
-                             ORDER BY canonical DESC, tx_id;")
+                             WHERE gene_name = {gene_name}
+                             AND transcript_type = {transcript_type}
+                             ORDER BY canonical DESC, tx_id;",
+                                 gene_name = gene_name,
+                                 transcript_type = transcript_type,
+                                 .con = con)
           },
           "300K-RNA (hg38)" = {
             tx_query <-
@@ -51,13 +54,17 @@ get_tx <- function(db, transcript_type, gene_name) {
 get_exons <- function(db, transcript_id, transcript_type, ss_type) {
   switch (db,
           "40K-RNA (hg19)" = {
-            ex_query <- paste0("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS id
+            ex_query <- glue_sql("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS id
               FROM misspl_app.misspl_events_40k_hg19_tx tx
               JOIN misspl_app.misspl_events_40k_hg19_events evnt
               ON tx.gene_tx_id = evnt.gene_tx_id
-              AND ss_type = '", ss_type, "'
-              AND tx.transcript_type = '", transcript_type, "'
-              AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', transcript_id), "' ORDER BY exon_no ASC;")
+              AND ss_type = {ss_type}
+              AND tx.transcript_type = {transcript_type}
+              AND tx.tx_id = {tx_id} ORDER BY exon_no ASC;",
+                                 ss_type = ss_type,
+                                 transcript_type = transcript_type,
+                                 tx_id = gsub(' \\(Canonical\\)', '', transcript_id),
+                                 .con = con)
             ex <- dbGetQuery(con, ex_query)
           },
           "300K-RNA (hg38)" = {
@@ -88,12 +95,23 @@ get_tissues <- function() {
   return(res)
 }
 
-get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_filt, event_filt, tissue_id = NULL, events_limit = NULL) {
+# max_cryptic, max_skipped and limit are numbers, or NULL to leave that filter
+# off ("Show all"). They come from the browser, so they are converted to
+# integers and bound, never pasted into the SQL.
+get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, max_cryptic = NULL, max_skipped = NULL, limit = NULL, tissue_id = NULL, events_limit = NULL) {
+  cryp_filt <- if (is.null(max_cryptic)) SQL("") else
+    glue_sql(" AND (ABS(cryptic_distance) <= {max_cryptic} OR cryptic_distance IS NULL)",
+             max_cryptic = as.integer(max_cryptic), .con = con)
+  es_filt <- if (is.null(max_skipped)) SQL("") else
+    glue_sql(" AND (skipped_exons_count <= {max_skipped} OR skipped_exons_count IS NULL)",
+             max_skipped = as.integer(max_skipped), .con = con)
+  event_filt <- if (is.null(limit)) SQL("") else
+    glue_sql(" LIMIT {limit}", limit = as.integer(limit), .con = con)
   flog.trace(event_filt)
-  
+
   switch (db,
           "40K-RNA (hg19)" = {
-            table_query <- paste0("SELECT evnt.splicing_event_class,
+            table_query <- glue_sql("SELECT evnt.splicing_event_class,
                                           CASE WHEN evnt.missplicing_inframe = TRUE THEN 'Yes' ELSE 'No' END AS missplicing_inframe,
                                           CASE WHEN evnt.in_gtex = TRUE THEN 'Yes' ELSE 'No' END AS in_gtex,
                                           CASE WHEN evnt.in_intropolis = TRUE THEN 'Yes' ELSE 'No' END AS in_intropolis,
@@ -109,17 +127,20 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                     FROM misspl_app.misspl_events_40k_hg19_tx tx
                                     JOIN misspl_app.misspl_events_40k_hg19_events evnt
                                     ON tx.gene_tx_id = evnt.gene_tx_id
-                                    AND ss_type = '", ss_type, "'
-                                    AND exon_no = ", gsub(' \\((.*?)\\)', '', exon_id),
-                                  cryp_filt,
-                                  es_filt,
-                                  " AND tx.tx_id = '", gsub(' \\(Canonical\\)', '', transcript_id), "'
-                                    ORDER BY evnt.sample_count DESC",
-                                  event_filt, ";")
+                                    AND ss_type = {ss_type}
+                                    AND exon_no = {exon_no}{cryp_filt}{es_filt} AND tx.tx_id = {tx_id}
+                                    ORDER BY evnt.sample_count DESC{event_filt};",
+                                    ss_type = ss_type,
+                                    exon_no = as.integer(gsub(' \\((.*?)\\)', '', exon_id)),
+                                    cryp_filt = cryp_filt,
+                                    es_filt = es_filt,
+                                    tx_id = gsub(' \\(Canonical\\)', '', transcript_id),
+                                    event_filt = event_filt,
+                                    .con = con)
           },
           "300K-RNA (hg38)" = {
             if (tissue_id == 0) {  # All tissues
-              qry <- paste0("SELECT
+              qry <- "SELECT
                                   MS.splicing_event_class,
                                   CASE WHEN MS.missplicing_inframe = TRUE THEN 'Yes' ELSE 'No' END AS missplicing_inframe,
                                   CASE WHEN MS.in_gtex = TRUE THEN 'Yes' ELSE 'No' END AS in_gtex,
@@ -167,20 +188,19 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                                   AND rss.exon_id = RE.exon_id 
                               WHERE MS.transcript_id = {transcript_id}
                                 AND RE.exon_id = {exon_id}
-                                AND rss.ss_type = {ss_type} ",
-                            cryp_filt,
-                            es_filt,
-                              " ORDER BY
-                                  sample_count DESC ",
-                            event_filt, ";")
+                                AND rss.ss_type = {ss_type} {cryp_filt}{es_filt} ORDER BY
+                                  sample_count DESC {event_filt};"
               table_query <- glue_sql(qry,
                                       events_limit = events_limit,
                                       transcript_id = transcript_id,
                                       exon_id = exon_id,
                                       ss_type = ss_type,
+                                      cryp_filt = cryp_filt,
+                                      es_filt = es_filt,
+                                      event_filt = event_filt,
                                       .con = con)
             } else {
-              qry <- paste0("SELECT
+              qry <- "SELECT
                                   MS.splicing_event_class,
                                   CASE WHEN MS.missplicing_inframe = TRUE THEN 'Yes' ELSE 'No' END AS missplicing_inframe,
                                   CASE WHEN MS.in_gtex = TRUE THEN 'Yes' ELSE 'No' END AS in_gtex,
@@ -210,17 +230,16 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, cryp_filt, es_
                               WHERE RT2.tissue_id = {tissue_id}
                                 AND MS.transcript_id = {transcript_id}
                                 AND RE.exon_id = {exon_id}
-                                AND rss.ss_type = {ss_type} ",
-                            cryp_filt,
-                            es_filt,
-                              " ORDER BY
-                                  TMS.tissue_sample_count DESC ",
-                           event_filt, ";")
+                                AND rss.ss_type = {ss_type} {cryp_filt}{es_filt} ORDER BY
+                                  TMS.tissue_sample_count DESC {event_filt};"
               table_query <- glue_sql(qry,
                                      tissue_id = tissue_id,
                                      transcript_id = transcript_id,
                                      exon_id = exon_id,
                                      ss_type = ss_type,
+                                     cryp_filt = cryp_filt,
+                                     es_filt = es_filt,
+                                     event_filt = event_filt,
                                      .con = con)
             }
           })

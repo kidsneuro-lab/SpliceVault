@@ -32,26 +32,32 @@ deployment waits for it to pass.
 
 ## Input form scenarios
 
-`tests/testthat/test-form-300k.R` and `test-form-40k.R` pin how the
-Gene/Transcript/Exon form behaves for each dataset: the gene, transcript and
-exon dropdowns, the tissue dropdown, the Generate Table button and Restore
-Settings. Each file is split by the dataset a scenario starts from, and each
-scenario stands alone so a developer or domain expert can read it without the
-rest of the file:
+Three files pin how the form behaves today, in scenarios a developer or
+domain expert can read one at a time:
+
+- `tests/testthat/test-ui.R`: what the page opens with (Variant tab, default
+  settings, tissue list, dropdowns filled behind the Variant tab), greying out
+  of sliders by the "Show all" boxes, Restore Settings and the Generate Table
+  button. Runs on the page defaults (300K-RNA, RefSeq).
+- `tests/testthat/test-300k.R` and `test-40k.R`: the gene, transcript and
+  exon dropdowns on each dataset, for RefSeq and Ensembl, including switching
+  dataset, transcript type, transcript, gene and splice site, plus the
+  dataset's tissue dropdown behaviour.
 
 ```r
-it("picking a gene lists its transcripts, canonical first and marked, and its acceptor exons", {
+it("picking another transcript lists its exons, and the exon goes back to the first exon", {
   with_app({
     # Given
-    user_opens_app(session, dataset = "300K-RNA (hg38)", transcripts = "RefSeq")
+    user_opens_app(session)
+    user_selects(session, "Tab", "Gene/Transcript/Exon")
+    user_selects(session, "Exon", "3 (g.1032391)")
 
     # When
-    user_selects(session, "Gene", "SMN1")
+    user_selects(session, "Transcript", "NM_001303499")
 
     # Then
-    expect_dropdown(session, "Transcript",
-                    options = c("NM_000344 (Canonical)", "NM_001297715"),
-                    selected = "NM_000344 (Canonical)")
+    expect_selected(session, "Transcript", "NM_001303499")
+    expect_dropdown(session, "Exon", options = c("2 (g.1031070)", ...), selected = "2 (g.1031070)")
   })
 })
 ```
@@ -60,14 +66,22 @@ Conventions:
 
 - Write inputs and expected values out in full, as the exact text the user
   sees. No loops or lookup tables, even where scenarios repeat.
+- The app opens as the real page does: `user_opens_app()` starts from the
+  defaults in `ui.R` (read from the rendered page), on the Variant tab.
+  Dropdown scenarios select the Gene/Transcript/Exon tab, then the dataset and
+  transcript type they need.
+- Switch scenarios start from CNN2, its canonical transcript and the second
+  exon in the dropdown, so a reset to the first exon is visible.
 - Name fields, settings and buttons by their labels on screen. The actions
-  are `user_opens_app()`, `user_selects()`, `user_clears()`, `user_changes()`
-  and `user_clicks()`; the checks are `expect_dropdown()`, `expect_selected()`,
-  `expect_hidden()`, `expect_setting()` and `expect_button()`. All are in
+  are `user_opens_app()`, `user_selects()` (dropdowns, tabs and radio
+  buttons), `user_clears()`, `user_changes()` and `user_clicks()`; the checks
+  are `expect_dropdown()`, `expect_selected()`, `expect_hidden()`,
+  `expect_setting()` and `expect_enabled()`. All are in
   `tests/testthat/helper-app.R`, which is the only place input IDs and
   database IDs appear.
 - When a scenario pins behaviour that has an open issue, end its name with
   "(current behaviour, see #NN)" and update it when the issue is fixed.
+- Events table contents belong to the table tests (#44), not here.
 
 `shiny::testServer()` has no browser, so server updates to inputs (new
 dropdown selections, Restore Settings) never reach `input` on their own. The

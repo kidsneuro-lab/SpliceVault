@@ -32,7 +32,8 @@ local_test_app <- function(env = parent.frame()) {
 # - choices for server-side selectize inputs (Shiny's mock session makes
 #   registerDataObj() a no-op; this keeps the data instead)
 # - input updates (new selected values) not yet applied by settle()
-# - shinyjs enable/disable calls, by element id
+# - shinyjs enable/disable/toggleState calls, as "enable" or "disable" by
+#   element id
 # - how many times the tissue dropdown has been (re)defined, since the server
 #   re-renders it with identical HTML and the browser still rebinds it
 recording_session <- function() {
@@ -62,9 +63,13 @@ recording_session <- function() {
     invisible()
   }
   session$sendCustomMessage <- function(type, message) {
-    if (type %in% c("shinyjs-enable", "shinyjs-disable") && !is.null(message$id)) {
-      session$browser$js[[message$id]] <- sub("^shinyjs-", "", type)
-    }
+    if (is.null(message$id)) return(invisible())
+    state <- switch(type,
+                    "shinyjs-enable" = "enable",
+                    "shinyjs-disable" = "disable",
+                    "shinyjs-toggleState" = if (isTRUE(message$condition)) "enable" else "disable",
+                    NULL)
+    if (!is.null(state)) session$browser$js[[message$id]] <- state
     invisible()
   }
   session
@@ -80,17 +85,57 @@ dropdown <- function(session, inputId) {
   out
 }
 
-# Inputs as the browser sends them on first load in Gene/Transcript/Exon mode.
-initial_inputs <- function(db = "300K-RNA (hg38)", tx_type = "RefSeq") {
-  c(list(mode = "Gene/Transcript/Exon", dbInput = db, txTypeInput = tx_type,
-         ssTypeInput = "Acceptor", geneInput = "", txInput = "", exonInput = ""),
-    default_settings)
+# The page as ui.R renders it, as HTML, built once per test run. Included
+# HTML files are read as-is (shiny::includeHTML() warns that faq.html is a full
+# document); google-analytics.html is generated outside the repository
+# (launch.sh, deploys), so its template stands in when it is missing. Call it
+# inside shiny::testServer(), where global.R has run.
+.page <- new.env()
+page_html <- function() {
+  if (is.null(.page$html)) {
+    env <- new.env(parent = globalenv())
+    env$includeHTML <- function(path) {
+      if (!file.exists(path)) path <- sub("\\.html$", "-template.html", path)
+      htmltools::HTML(paste(readLines(path, warn = FALSE), collapse = "\n"))
+    }
+    eval(parse("ui.R"), envir = env)
+    .page$html <- htmltools::renderTags(env$ui)$html
+  }
+  .page$html
 }
 
-# Sidebar settings as ui.R first renders them (tissuesInput aside, which only
-# exists once its dropdown renders).
-default_settings <- list(eventsNoInput = 4, allevents = FALSE, esInput = 2,
-                         allskips = FALSE, cssInput = 600, allcryptics = FALSE)
+# Input values the browser starts with, read from the rendered page: the
+# active tab, sliders, checkboxes, radio buttons and the variant text box. The
+# gene, transcript and exon dropdowns start empty.
+page_defaults <- function(html = page_html()) {
+  tags <- regmatches(html, gregexpr("<input[^>]*>", html))[[1]]
+  attr_of <- function(tag, name) {
+    m <- regmatches(tag, regexec(paste0(" ", name, '="([^"]*)"'), tag))[[1]]
+    if (length(m)) m[2] else NA_character_
+  }
+  id_tag <- function(id) tags[grepl(paste0(' id="', id, '"'), tags)]
+  checked_radio <- function(name) {
+    radio <- tags[grepl(paste0(' name="', name, '"'), tags) & grepl(" checked=", tags)]
+    attr_of(radio, "value")
+  }
+  tabset <- regmatches(html, regexpr('id="mode"[\\s\\S]*?</ul>', html, perl = TRUE))
+  active_tab <- regmatches(tabset, regexec('class="active">\\s*<a [^>]*data-value="([^"]*)"', tabset))[[1]][2]
+
+  out <- list(mode = active_tab, variant = attr_of(id_tag("variant"), "value"))
+  for (id in c("dbInput", "txTypeInput", "ssTypeInput")) out[[id]] <- checked_radio(id)
+  for (id in c("eventsNoInput", "esInput", "cssInput")) out[[id]] <- as.numeric(attr_of(id_tag(id), "data-from"))
+  for (id in c("allevents", "allskips", "allcryptics")) out[[id]] <- grepl(" checked", id_tag(id))
+  c(out, list(geneInput = "", txInput = "", exonInput = ""))
+}
+
+# Inputs as the browser sends them on first load. db and tx_type override the
+# page defaults.
+initial_inputs <- function(db = NULL, tx_type = NULL) {
+  inputs <- page_defaults()
+  if (!is.null(db)) inputs$dbInput <- db
+  if (!is.null(tx_type)) inputs$txTypeInput <- tx_type
+  inputs
+}
 
 # Inputs whose values the browser sends as strings, and sliders, whose values
 # the server sends as strings (updateSliderInput) but the browser sends as numbers.
@@ -159,9 +204,9 @@ tissue_options <- function(session) {
 # Dropdowns whose options come from the database.
 dropdown_ids <- c("Gene" = "geneInput", "Transcript" = "txInput",
                   "Exon" = "exonInput", "Tissue" = "tissuesInput")
-# Radio buttons, whose option labels are also their values.
-radio_ids <- c("Dataset" = "dbInput", "Transcript type" = "txTypeInput",
-               "Splice site" = "ssTypeInput")
+# Tabs and radio buttons, whose option labels are also their values.
+choice_ids <- c("Tab" = "mode", "Dataset" = "dbInput",
+                "Transcript type" = "txTypeInput", "Splice site" = "ssTypeInput")
 # Sidebar settings.
 setting_ids <- c("Number of Events" = "eventsNoInput", "Show all Events" = "allevents",
                  "Maximum Number of Exons Skipped" = "esInput",
@@ -186,31 +231,31 @@ dropdown_options <- function(session, field) {
   dropdown(session, id)
 }
 
-# The label of the option shown as selected in a dropdown or radio button.
+# The label of the option shown as selected in a dropdown, tab or radio button.
 selected_option <- function(session, field) {
-  if (field %in% names(radio_ids)) return(shiny::isolate(session$input[[radio_ids[[field]]]]))
+  if (field %in% names(choice_ids)) return(shiny::isolate(session$input[[choice_ids[[field]]]]))
   options <- dropdown_options(session, field)
-  value <- shiny::isolate(session$input[[dropdown_ids[[field]]]])
+  value <- shiny::isolate(session$input[[field_id(field, dropdown_ids)]])
   options$label[options$value == value]
 }
 
-# The page has loaded in Gene/Transcript/Exon mode on the given dataset and
-# transcript type, but the server has not yet filled the dropdowns.
-app_starts_loading <- function(session, dataset, transcripts) {
-  do.call(session$setInputs, initial_inputs(db = dataset, tx_type = transcripts))
+# The page has loaded with the defaults ui.R sets (the Variant tab showing),
+# but the server has not yet filled the dropdowns.
+app_starts_loading <- function(session) {
+  do.call(session$setInputs, initial_inputs())
 }
 
-# Opens the app in Gene/Transcript/Exon mode on the given dataset and
-# transcript type, and waits for the dropdowns to fill.
-user_opens_app <- function(session, dataset, transcripts) {
-  app_starts_loading(session, dataset, transcripts)
+# Opens the app as a user would, and waits for the dropdowns to fill.
+user_opens_app <- function(session) {
+  app_starts_loading(session)
   settle(session)
 }
 
-# Picks an option, by the text the user sees, in a dropdown or radio button.
+# Picks an option, by the text the user sees, in a dropdown, tab or radio
+# button.
 user_selects <- function(session, field, option) {
-  if (field %in% names(radio_ids)) {
-    set_input(session, radio_ids[[field]], option)
+  if (field %in% names(choice_ids)) {
+    set_input(session, choice_ids[[field]], option)
   } else {
     options <- dropdown_options(session, field)
     if (!option %in% options$label) {
@@ -250,7 +295,7 @@ expect_dropdown <- function(session, field, options, selected) {
   expect_selected(session, field, selected)
 }
 
-# Checks which option a dropdown or radio button shows as selected.
+# Checks which option a dropdown, tab or radio button shows as selected.
 expect_selected <- function(session, field, selected) {
   testthat::expect_equal(selected_option(session, field), selected,
                          label = paste(field, "selection"))
@@ -267,9 +312,9 @@ expect_setting <- function(session, setting, value) {
                          label = setting)
 }
 
-# Checks whether a button can be clicked.
-expect_button <- function(session, button, enabled) {
-  state <- session$browser$js[[field_id(button, button_ids)]]
-  testthat::expect_equal(state, if (enabled) "enable" else "disable",
-                         label = paste(button, "button state"))
+# Checks whether a button or sidebar setting can be used or is greyed out.
+expect_enabled <- function(session, control, enabled) {
+  id <- field_id(control, c(button_ids, setting_ids))
+  testthat::expect_equal(session$browser$js[[id]], if (enabled) "enable" else "disable",
+                         label = paste(control, "state"))
 }

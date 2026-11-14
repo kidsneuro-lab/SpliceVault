@@ -1,0 +1,23 @@
+structure(list(url = "https://rest.ensembl.org/vep/human/hgvs/NM_9999999:c.316C>T?content-type=application/json&numbers=1&refseq=1", 
+    status_code = 400L, headers = structure(list(vary = "Content-Type, Origin", 
+        `content-type` = "application/json", `strict-transport-security` = "max-age=31536000; includeSubDomains; preload", 
+        date = "Sat, 14 Nov 2026 07:12:58 GMT", `x-ratelimit-limit` = "55000", 
+        `x-ratelimit-reset` = "2822", `x-runtime` = "1.808938", 
+        `x-ratelimit-period` = "3600", `x-ratelimit-remaining` = "54989", 
+        `content-length` = "115"), class = c("insensitive", "list"
+    )), all_headers = list(list(status = 400L, version = "HTTP/2", 
+        headers = structure(list(vary = "Content-Type, Origin", 
+            `content-type` = "application/json", `strict-transport-security` = "max-age=31536000; includeSubDomains; preload", 
+            date = "Sat, 14 Nov 2026 07:12:58 GMT", `x-ratelimit-limit` = "55000", 
+            `x-ratelimit-reset` = "2822", `x-runtime` = "1.808938", 
+            `x-ratelimit-period` = "3600", `x-ratelimit-remaining` = "54989", 
+            `content-length` = "115"), class = c("insensitive", 
+        "list")))), cookies = structure(list(domain = logical(0), 
+        flag = logical(0), path = logical(0), secure = logical(0), 
+        expiration = structure(numeric(0), class = c("POSIXct", 
+        "POSIXt")), name = logical(0), value = logical(0)), row.names = integer(0), class = "data.frame"), 
+    content = charToRaw("{\"error\":\"Unable to parse HGVS notation 'NM_9999999:c.316C>T': Could not get a Transcript object for 'NM_9999999'\"}"), 
+    date = structure(1794640378, class = c("POSIXct", "POSIXt"
+    ), tzone = "GMT"), times = c(redirect = 0, namelookup = 2.9e-05, 
+    connect = 0, pretransfer = 0.00012, starttransfer = 11.784928, 
+    total = 11.785043)), class = "response")

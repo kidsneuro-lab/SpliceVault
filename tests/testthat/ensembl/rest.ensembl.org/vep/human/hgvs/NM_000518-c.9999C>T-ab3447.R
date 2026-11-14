@@ -1,0 +1,23 @@
+structure(list(url = "https://rest.ensembl.org/vep/human/hgvs/NM_000518:c.9999C>T?content-type=application/json&numbers=1&refseq=1", 
+    status_code = 400L, headers = structure(list(vary = "Content-Type, Origin", 
+        `content-type` = "application/json", `strict-transport-security` = "max-age=31536000; includeSubDomains; preload", 
+        date = "Sat, 14 Nov 2026 07:13:19 GMT", `x-ratelimit-limit` = "55000", 
+        `x-ratelimit-reset` = "2801", `x-runtime` = "0.350105", 
+        `x-ratelimit-period` = "3600", `x-ratelimit-remaining` = "54988", 
+        `content-length` = "161"), class = c("insensitive", "list"
+    )), all_headers = list(list(status = 400L, version = "HTTP/2", 
+        headers = structure(list(vary = "Content-Type, Origin", 
+            `content-type` = "application/json", `strict-transport-security` = "max-age=31536000; includeSubDomains; preload", 
+            date = "Sat, 14 Nov 2026 07:13:19 GMT", `x-ratelimit-limit` = "55000", 
+            `x-ratelimit-reset` = "2801", `x-runtime` = "0.350105", 
+            `x-ratelimit-period` = "3600", `x-ratelimit-remaining` = "54988", 
+            `content-length` = "161"), class = c("insensitive", 
+        "list")))), cookies = structure(list(domain = logical(0), 
+        flag = logical(0), path = logical(0), secure = logical(0), 
+        expiration = structure(numeric(0), class = c("POSIXct", 
+        "POSIXt")), name = logical(0), value = logical(0)), row.names = integer(0), class = "data.frame"), 
+    content = charToRaw("{\"error\":\"Unable to parse HGVS notation 'NM_000518:c.9999C>T':  : Unable to map the cDNA coordinates 9999-9999 to genomic coordinates for Transcript CCDS7753.1\"}"), 
+    date = structure(1794640399, class = c("POSIXct", "POSIXt"
+    ), tzone = "GMT"), times = c(redirect = 0, namelookup = 2.7e-05, 
+    connect = 0, pretransfer = 0.000112, starttransfer = 20.607719, 
+    total = 20.607843)), class = "response")

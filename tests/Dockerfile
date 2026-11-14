@@ -22,10 +22,11 @@ WORKDIR /opt/renv/project
 COPY renv.lock .Rprofile ./
 COPY renv/activate.R renv/
 
-# testthat is test-only, so it is installed here and kept out of renv.lock.
+# testthat and httptest (replays recorded Ensembl REST responses) are
+# test-only, so they are installed here and kept out of renv.lock.
 RUN Rscript -e ' \
   stopifnot(as.character(getRversion()) == renv::lockfile_read("renv.lock")$R$Version); \
   renv::restore(prompt = FALSE); \
-  renv::install("testthat@3.3.2", prompt = FALSE)'
+  renv::install(c("testthat@3.3.2", "httptest@4.2.4"), prompt = FALSE)'
 
 WORKDIR /app

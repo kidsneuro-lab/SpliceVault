@@ -1,0 +1,168 @@
+[
+    {
+        "most_severe_consequence": "splice_donor_variant",
+        "assembly_name": "GRCh38",
+        "strand": -1,
+        "transcript_consequences": [
+            {
+                "biotype": "protein_coding",
+                "impact": "HIGH",
+                "strand": -1,
+                "consequence_terms": [
+                    "splice_donor_variant"
+                ],
+                "given_ref": "G",
+                "gene_symbol_source": "EntrezGene",
+                "transcript_id": "NM_000518.5",
+                "gene_id": "3043",
+                "intron": "2/2",
+                "used_ref": "G",
+                "gene_symbol": "HBB",
+                "variant_allele": "T"
+            }
+        ],
+        "id": "NM_000518(HBB):c.315+1G>T",
+        "allele_string": "G/T",
+        "seq_region_name": "11",
+        "input": "NM_000518(HBB):c.315+1G>T",
+        "end": 5226576,
+        "start": 5226576,
+        "colocated_variants": [
+            {
+                "id": "CD076805",
+                "phenotype_or_disease": 1,
+                "start": 5226576,
+                "allele_string": "HGMD_MUTATION",
+                "strand": 1,
+                "seq_region_name": "11",
+                "end": 5226576
+            },
+            {
+                "id": "COSV58942934",
+                "phenotype_or_disease": 1,
+                "start": 5226576,
+                "allele_string": "COSMIC_MUTATION",
+                "strand": 1,
+                "somatic": 1,
+                "var_synonyms": {
+                    "COSMIC": [
+                        "COSM5970190"
+                    ]
+                },
+                "seq_region_name": "11",
+                "end": 5226576
+            },
+            {
+                "start": 5226576,
+                "phenotype_or_disease": 1,
+                "id": "CS063320",
+                "allele_string": "HGMD_MUTATION",
+                "strand": 1,
+                "seq_region_name": "11",
+                "end": 5226576
+            },
+            {
+                "end": 5226576,
+                "seq_region_name": "11",
+                "strand": 1,
+                "allele_string": "HGMD_MUTATION",
+                "id": "CS820006",
+                "start": 5226576,
+                "phenotype_or_disease": 1
+            },
+            {
+                "strand": 1,
+                "seq_region_name": "11",
+                "end": 5226576,
+                "start": 5226576,
+                "phenotype_or_disease": 1,
+                "id": "CS870042",
+                "allele_string": "HGMD_MUTATION"
+            },
+            {
+                "pubmed": [
+                    1427786,
+                    27351925,
+                    35811813,
+                    2200760,
+                    20301599,
+                    1634368,
+                    6188062,
+                    8718703,
+                    3462712,
+                    1702403,
+                    2903765,
+                    3422218,
+                    7151176,
+                    7504400,
+                    8917506,
+                    9490703,
+                    7558878,
+                    26366553,
+                    25825561,
+                    33887194,
+                    36525434,
+                    39359944
+                ],
+                "strand": 1,
+                "clin_sig_ref_allele": "C",
+                "var_synonyms": {
+                    "OMIM": [
+                        141900.0348
+                    ],
+                    "ClinVar": [
+                        "RCV001850405",
+                        "RCV000169544",
+                        "VCV000189128",
+                        "RCV003987325",
+                        "RCV001170018",
+                        "RCV002476979",
+                        "RCV000759065",
+                        "VCV000619686",
+                        "RCV001004566",
+                        "RCV002288502",
+                        "RCV001723572",
+                        "RCV001731303",
+                        "RCV000020332",
+                        "RCV000016696",
+                        "VCV000015438",
+                        "RCV000255349",
+                        "RCV005003370",
+                        "RCV005357132"
+                    ],
+                    "HbVar": [
+                        884,
+                        2602,
+                        885
+                    ]
+                },
+                "seq_region_name": "11",
+                "end": 5226576,
+                "clin_sig": [
+                    "likely_pathogenic",
+                    "pathogenic"
+                ],
+                "id": "rs33945777",
+                "phenotype_or_disease": 1,
+                "start": 5226576,
+                "clin_sig_allele": "T:pathogenic;G:pathogenic/likely_pathogenic;A:pathogenic;G:pathogenic",
+                "frequencies": {
+                    "T": {
+                        "gnomadg_mid": 0,
+                        "gnomadg_afr": 2.413e-05,
+                        "gnomadg_eas": 0,
+                        "gnomadg": 6.572e-06,
+                        "gnomadg_fin": 0,
+                        "gnomadg_amr": 0,
+                        "gnomadg_remaining": 0,
+                        "gnomadg_ami": 0,
+                        "gnomadg_nfe": 0,
+                        "gnomadg_sas": 0,
+                        "gnomadg_asj": 0
+                    }
+                },
+                "allele_string": "C/A/G/T"
+            }
+        ]
+    }
+]

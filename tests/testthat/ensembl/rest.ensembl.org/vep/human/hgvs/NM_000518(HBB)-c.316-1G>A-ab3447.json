@@ -1,0 +1,120 @@
+[
+    {
+        "input": "NM_000518(HBB):c.316-1G>A",
+        "id": "NM_000518(HBB):c.316-1G>A",
+        "most_severe_consequence": "splice_acceptor_variant",
+        "transcript_consequences": [
+            {
+                "intron": "2/2",
+                "consequence_terms": [
+                    "splice_acceptor_variant"
+                ],
+                "transcript_id": "NM_000518.5",
+                "biotype": "protein_coding",
+                "used_ref": "G",
+                "gene_id": "3043",
+                "strand": -1,
+                "impact": "HIGH",
+                "gene_symbol": "HBB",
+                "gene_symbol_source": "EntrezGene",
+                "variant_allele": "A",
+                "given_ref": "G"
+            }
+        ],
+        "colocated_variants": [
+            {
+                "phenotype_or_disease": 1,
+                "allele_string": "HGMD_MUTATION",
+                "strand": 1,
+                "seq_region_name": "11",
+                "start": 5225727,
+                "end": 5225727,
+                "id": "CS920973"
+            },
+            {
+                "id": "CS951436",
+                "seq_region_name": "11",
+                "end": 5225727,
+                "start": 5225727,
+                "allele_string": "HGMD_MUTATION",
+                "phenotype_or_disease": 1,
+                "strand": 1
+            },
+            {
+                "seq_region_name": "11",
+                "end": 5225727,
+                "start": 5225727,
+                "allele_string": "HGMD_MUTATION",
+                "phenotype_or_disease": 1,
+                "strand": 1,
+                "id": "CS973344"
+            },
+            {
+                "id": "rs33952266",
+                "frequencies": {
+                    "A": {
+                        "gnomade_sas": 0,
+                        "gnomade_asj": 0,
+                        "gnomade_nfe": 1.799e-06,
+                        "gnomade_mid": 0,
+                        "gnomade_fin": 0,
+                        "gnomade_remaining": 0,
+                        "gnomade_eas": 0,
+                        "gnomade_afr": 0,
+                        "gnomade_amr": 0,
+                        "gnomade": 1.368e-06
+                    }
+                },
+                "var_synonyms": {
+                    "ClinVar": [
+                        "RCV005430580",
+                        "RCV001800306",
+                        "RCV001199849",
+                        "RCV001078269",
+                        "RCV001078268",
+                        "RCV000736022",
+                        "RCV000668023",
+                        "VCV000552712",
+                        "RCV000506832",
+                        "VCV000038671",
+                        "RCV000016774",
+                        "VCV000015512",
+                        "RCV003558495"
+                    ],
+                    "HbVar": [
+                        943,
+                        944,
+                        942
+                    ],
+                    "OMIM": [
+                        141900.0454,
+                        141900.0423
+                    ]
+                },
+                "strand": 1,
+                "clin_sig_ref_allele": "C",
+                "clin_sig": [
+                    "likely_pathogenic",
+                    "pathogenic"
+                ],
+                "phenotype_or_disease": 1,
+                "allele_string": "C/A/G/T",
+                "start": 5225727,
+                "clin_sig_allele": "T:pathogenic;A:likely_pathogenic;G:pathogenic;T:likely_pathogenic",
+                "end": 5225727,
+                "pubmed": [
+                    9101288,
+                    1398296,
+                    7558878
+                ],
+                "seq_region_name": "11"
+            }
+        ],
+        "seq_region_name": "11",
+        "allele_string": "G/A",
+        "start": 5225727,
+        "strand": -1,
+        "end": 5225727,
+        "assembly_name": "GRCh38"
+    }
+]

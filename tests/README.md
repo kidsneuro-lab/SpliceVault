@@ -120,6 +120,40 @@ dropdown selections, Restore Settings) never reach `input` on their own. The
 helpers record what the server sends and `settle()` plays the browser's part,
 applying those values until nothing changes.
 
+## Variant mode
+
+`tests/testthat/test-variant.R` pins Variant mode: it enters an HGVS variant
+on the Variant tab, clicks Generate Table and checks the table title (and,
+for a resolved variant, the first event). It covers exonic, intronic donor
+(+) and intronic acceptor (-) variants on both strands (HBB negative, HBA1
+positive), one Ensembl transcript, and the error messages for input with no
+transcript, a wrong reference allele, a transcript Ensembl does not know,
+coordinates that cannot be mapped and anything else Ensembl rejects. The
+variants are made up for the tests. Enter a variant with
+`user_enters_variant()`.
+
+The app looks variants up with the Ensembl REST VEP endpoint. Tests never
+call it: `with_app()` replays recorded responses with
+[httptest](https://enroute-pbc.github.io/httptest/), and a request with no
+recording fails the test. The recordings are in `tests/testthat/ensembl/`,
+one file per request, named after the request URL.
+
+### Re-recording Ensembl responses
+
+Re-record when you add a Variant scenario, or when Ensembl changes (a new
+release can change transcript versions or annotations). It needs internet
+access:
+
+```bash
+./run_tests.sh --record-ensembl variant
+```
+
+This runs the matching test files against the live Ensembl REST API and saves
+every response, replacing the recordings for the same requests. The tests
+still run their checks, so a changed response that changes what the user sees
+fails. Review the recordings with `git diff`, delete any for requests no
+scenario makes any more, then run `./run_tests.sh` to check they replay.
+
 ## Query budgets
 
 Each round trip to the remote production database is slow, and the local

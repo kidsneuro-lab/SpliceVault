@@ -23,11 +23,11 @@ R is pinned to 4.4.3 to match `renv.lock`; CI asserts the match. Add packages wi
 - `con` comes from `instrumented_postgres()` in `db.R`, which counts queries for test budgets and adds opt-in latency (`SPLICEVAULT_DB_LATENCY_MS`). Build any new connection or pool on it.
 - `db` values are the UI labels `"40K-RNA (hg19)"` and `"300K-RNA (hg38)"`, used as `switch()` keys. The two datasets live in different tables with different column types (e.g. `canonical` is `1`/`0` in 40K, boolean in 300K).
 - Build SQL with `glue_sql(..., .con = con)`
-- Variant lookups call the Ensembl REST VEP endpoint (`get_variant_data_restapi`), which returns errors as `list(error_text, "error", 1000, "")`.
+- Variant lookups call the Ensembl REST VEP endpoint (`get_variant_data_restapi`), which returns errors as `list(error_text, "error", 1000, "")`. Tests replay recorded responses from `tests/testthat/ensembl/`; re-record with `./run_tests.sh --record-ensembl variant`.
 
 ## Verifying changes
 
 - Run the tests with `./run_tests.sh` (add a filter such as `smoke` to run matching files). It needs only Docker: R and the fixture database both run in containers from `tests/docker-compose.yml`. Tests drive the server function with `shiny::testServer()`, reaching the database through the `test` profile in `config-template.yml`. See `tests/README.md`.
-- testthat is test-only: it is installed in `tests/Dockerfile` and kept out of `renv.lock` and `dependencies.R`. Rebuild happens automatically when `renv.lock` changes.
+- testthat and httptest are test-only: they are installed in `tests/Dockerfile` and kept out of `renv.lock` and `dependencies.R`. Rebuild happens automatically when `renv.lock` changes.
 - CI runs the same script (`.github/workflows/test.yaml`) and the test deploy waits for it.
 - For changes the tests don't cover, also run the app with `./launch.sh` (needs `.env` and DB access) and exercise the changed path in both datasets.

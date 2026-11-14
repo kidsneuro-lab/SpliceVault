@@ -1,0 +1,98 @@
+[
+    {
+        "input": "NM_000558(HBA1):c.301C>T",
+        "colocated_variants": [
+            {
+                "strand": 1,
+                "start": 177283,
+                "seq_region_name": "16",
+                "id": "rs1902166958",
+                "allele_string": "C/T",
+                "end": 177283,
+                "frequencies": {
+                    "T": {
+                        "gnomade_nfe": 8.993e-07,
+                        "gnomade_mid": 0,
+                        "gnomade_eas": 0,
+                        "gnomade_fin": 0,
+                        "gnomade_remaining": 0,
+                        "gnomade_sas": 0,
+                        "gnomade_afr": 0,
+                        "gnomade": 6.845e-07,
+                        "gnomade_amr": 0,
+                        "gnomade_asj": 0
+                    }
+                }
+            }
+        ],
+        "seq_region_name": "16",
+        "assembly_name": "GRCh38",
+        "start": 177283,
+        "most_severe_consequence": "missense_variant",
+        "end": 177283,
+        "allele_string": "C/T",
+        "transcript_consequences": [
+            {
+                "variant_allele": "T",
+                "gene_id": "3040",
+                "given_ref": "C",
+                "consequence_terms": [
+                    "downstream_gene_variant"
+                ],
+                "strand": 1,
+                "gene_symbol_source": "EntrezGene",
+                "gene_symbol": "HBA2",
+                "distance": 3573,
+                "impact": "MODIFIER",
+                "used_ref": "C",
+                "transcript_id": "NM_000517.6",
+                "biotype": "protein_coding"
+            },
+            {
+                "gene_id": "3039",
+                "sift_score": 0.16,
+                "given_ref": "C",
+                "consequence_terms": [
+                    "missense_variant",
+                    "splice_region_variant"
+                ],
+                "strand": 1,
+                "protein_start": 101,
+                "cds_start": 301,
+                "cdna_end": 338,
+                "variant_allele": "T",
+                "cds_end": 301,
+                "cdna_start": 338,
+                "codons": "Ctc/Ttc",
+                "gene_symbol": "HBA1",
+                "gene_symbol_source": "EntrezGene",
+                "protein_end": 101,
+                "sift_prediction": "tolerated",
+                "exon": "3/3",
+                "transcript_id": "NM_000558.5",
+                "impact": "MODERATE",
+                "amino_acids": "L/F",
+                "used_ref": "C",
+                "biotype": "protein_coding"
+            },
+            {
+                "distance": 3176,
+                "biotype": "protein_coding",
+                "transcript_id": "NM_005331.5",
+                "impact": "MODIFIER",
+                "used_ref": "C",
+                "given_ref": "C",
+                "consequence_terms": [
+                    "upstream_gene_variant"
+                ],
+                "variant_allele": "T",
+                "gene_id": "3049",
+                "gene_symbol": "HBQ1",
+                "gene_symbol_source": "EntrezGene",
+                "strand": 1
+            }
+        ],
+        "strand": 1,
+        "id": "NM_000558(HBA1):c.301C>T"
+    }
+]

@@ -1,0 +1,23 @@
+structure(list(url = "https://rest.ensembl.org/vep/human/hgvs/NM_000518:c.316?content-type=application/json&numbers=1&refseq=1", 
+    status_code = 400L, headers = structure(list(vary = "Content-Type, Origin", 
+        `content-type` = "application/json", `strict-transport-security` = "max-age=31536000; includeSubDomains; preload", 
+        date = "Sat, 14 Nov 2026 07:13:45 GMT", `x-ratelimit-limit` = "55000", 
+        `x-ratelimit-reset` = "2775", `x-runtime` = "0.358537", 
+        `x-ratelimit-period` = "3600", `x-ratelimit-remaining` = "54987", 
+        `content-length` = "165"), class = c("insensitive", "list"
+    )), all_headers = list(list(status = 400L, version = "HTTP/2", 
+        headers = structure(list(vary = "Content-Type, Origin", 
+            `content-type` = "application/json", `strict-transport-security` = "max-age=31536000; includeSubDomains; preload", 
+            date = "Sat, 14 Nov 2026 07:13:45 GMT", `x-ratelimit-limit` = "55000", 
+            `x-ratelimit-reset` = "2775", `x-runtime` = "0.358537", 
+            `x-ratelimit-period` = "3600", `x-ratelimit-remaining` = "54987", 
+            `content-length` = "165"), class = c("insensitive", 
+        "list")))), cookies = structure(list(domain = logical(0), 
+        flag = logical(0), path = logical(0), secure = logical(0), 
+        expiration = structure(numeric(0), class = c("POSIXct", 
+        "POSIXt")), name = logical(0), value = logical(0)), row.names = integer(0), class = "data.frame"), 
+    content = charToRaw("{\"error\":\"Unable to parse HGVS notation 'NM_000518:c.316':  : The variant class for HGVS notation 'NM_000518:c.316' is unknown or could not be correctly recognized\"}"), 
+    date = structure(1794640425, class = c("POSIXct", "POSIXt"
+    ), tzone = "GMT"), times = c(redirect = 0, namelookup = 2.9e-05, 
+    connect = 0, pretransfer = 0.000109, starttransfer = 25.425099, 
+    total = 25.425236)), class = "response")

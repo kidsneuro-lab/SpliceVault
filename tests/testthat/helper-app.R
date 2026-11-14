@@ -173,12 +173,34 @@ settle <- function(session, max_rounds = 10) {
   stop("inputs still changing after ", max_rounds, " rounds")
 }
 
+# Recorded Ensembl REST responses, one file per request, under the request's
+# URL. See "Variant mode" in tests/README.md.
+ensembl_recordings <- function() file.path(app_dir(), "tests", "testthat", "ensembl")
+
+# Evaluates `code` with Ensembl REST requests answered from the recordings. A
+# request with no recording fails, so tests never reach the network. With
+# RECORD_ENSEMBL=true (./run_tests.sh --record-ensembl) requests go to the
+# live API instead and their responses are saved as recordings.
+with_ensembl_recordings <- function(code) {
+  withr::local_options(httptest.mock.paths = ensembl_recordings())
+  if (identical(Sys.getenv("RECORD_ENSEMBL"), "true")) {
+    httptest::start_capturing()
+  } else {
+    httptest::use_mock_api()
+  }
+  on.exit(httptest::stop_mocking(), add = TRUE)
+  on.exit(httptest::stop_capturing(), add = TRUE)
+  code
+}
+
 # Runs test code inside shiny::testServer() for the app on the fixture
-# database, with a recording session; the code sees `session`, `input` and
-# `output` as the server function does.
+# database, with a recording session and recorded Ensembl REST responses; the
+# code sees `session`, `input` and `output` as the server function does.
 with_app <- function(code) {
   local_test_app()
-  shiny::testServer(app_dir(), {{ code }}, session = recording_session())
+  with_ensembl_recordings(
+    shiny::testServer(app_dir(), {{ code }}, session = recording_session())
+  )
 }
 
 # Options (label, value) of the rendered tissue dropdown, with the selected
@@ -305,6 +327,12 @@ user_clears <- function(session, field) {
   settle(session)
 }
 
+# Types into the Variant box, replacing what was there.
+user_enters_variant <- function(session, variant) {
+  set_input(session, "variant", variant)
+  settle(session)
+}
+
 # Moves a slider or ticks/unticks a checkbox in the sidebar.
 user_changes <- function(session, setting, value) {
   set_input(session, field_id(setting, setting_ids), value)
@@ -354,6 +382,13 @@ expect_enabled <- function(session, control, enabled) {
 # Checks the title shown above the events table.
 expect_table_title <- function(session, title) {
   testthat::expect_equal(session$getOutput("table_title"), title, label = "table title")
+}
+
+# Checks the Event shown in the first row of the table.
+expect_first_event <- function(session, event) {
+  shown <- events_table(session)
+  testthat::expect_gt(nrow(shown), 0, label = "events shown")
+  testthat::expect_equal(shown$Event[1], event, label = "first event")
 }
 
 # Checks which events the table lists, in order, by the columns given (named

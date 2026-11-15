@@ -173,7 +173,10 @@ The count comes from `db.R`, which wraps the RPostgres driver's
 `dbSendQuery()`, so it sees `dbGetQuery()` and `dbExecute()` calls wherever
 they are issued. It counts only the app's own queries: the setup statements
 RPostgres runs when it opens a connection are left out, and are not delayed
-by the latency setting below either. The counter is per process, so take
+by the latency setting below either. Nor are the `SELECT 1` checks the
+connection pool runs before lending out a connection (every query in the
+`test` profile, whose `validation_interval` is 0), though these are delayed
+like the real round trip they stand for. The counter is per process, so take
 differences (as `count_queries()` does) rather than reading the total.
 `tests/testthat/test-query-count.R` holds the budgets. When an optimisation
 lowers a count, lower its budget to lock the gain in.

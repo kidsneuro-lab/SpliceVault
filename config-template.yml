@@ -5,6 +5,11 @@ default:
     port: 5432
     user: 'DB_USER'
     password: 'DB_PASSWORD'
+    # Connection pool (open_db_pool() in db.R): seconds a connection is
+    # trusted before it is checked again, and seconds an extra connection may
+    # sit unused before it is closed.
+    validation_interval: 60
+    idle_timeout: 60
 
 shinyapps:
   dataconnection:
@@ -24,3 +29,8 @@ test:
     port: 5432
     user: 'splicevault'
     password: 'splicevault'
+    # Check every connection before use, so tests that drop one see the
+    # recovery straight away. Close idle extra connections straight away, as
+    # shiny::testServer() waits for the pool's scheduled closes.
+    validation_interval: 0
+    idle_timeout: 0

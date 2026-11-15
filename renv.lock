@@ -1017,6 +1017,21 @@
       "Repository": "CRAN",
       "Hash": "09eb987710984fc2905c7129c7d85e65"
     },
+    "pool": {
+      "Package": "pool",
+      "Version": "1.0.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "DBI",
+        "R",
+        "R6",
+        "later",
+        "methods",
+        "rlang"
+      ],
+      "Hash": "cf51ea1093225e624fee0cebe126eb58"
+    },
     "prettyunits": {
       "Package": "prettyunits",
       "Version": "1.2.0",

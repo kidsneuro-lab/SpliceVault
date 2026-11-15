@@ -322,7 +322,7 @@ describe("300K-RNA (hg38) tissue dropdown", {
     })
   })
 
-  it("switching transcript type resets the tissue to All (current behaviour, see #62)", {
+  it("switching transcript type keeps the selected tissue", {
     with_app({
       # Given
       user_opens_app(session)
@@ -333,7 +333,7 @@ describe("300K-RNA (hg38) tissue dropdown", {
       user_selects(session, "Transcript type", "Ensembl")
 
       # Then
-      expect_selected(session, "Tissue", "All")
+      expect_selected(session, "Tissue", "Blood - Whole*")
     })
   })
 })

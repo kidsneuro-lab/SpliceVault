@@ -2,154 +2,101 @@ source("helpers.R")
 
 server <- function(input, output, session) {
   
-  #### Initialise ####
+  #### Dropdowns ####
+  # One observer per level, each running one (cached) query: dataset or
+  # transcript type -> genes, gene -> transcripts, transcript or splice site
+  # type -> exons. A level passes its selection down through a reactiveVal that
+  # also records the dataset and transcript type it belongs to. Setting a
+  # reactiveVal to the value it already holds does not invalidate it, so when
+  # the browser echoes back a selection the server just made, the level below
+  # does not run again. freezeReactiveValue() cannot do this: when a level
+  # keeps the same selection the browser sends nothing back, so a frozen input
+  # would never thaw into a refresh for the new dataset.
+  selected_gene <- reactiveVal()
+  selected_tx <- reactiveVal()
+
+  # Keeps the current selection when it is still an option, otherwise the
+  # first option.
+  keep_or_first <- function(current, options) {
+    if (!is.null(current) && current != "" && current %in% options) current else options[1]
+  }
+
   observeEvent({
     input$dbInput
     input$txTypeInput
   }, {
-    flog.debug("Selection of DB & Transcript type")
-    flog.debug("Switching to DB %s", isolate(input$dbInput))
-    flog.debug("Switching to Transcript type %s", isolate(input$txTypeInput))
-    
-    # Genes list
-    genenames <- get_genes(db = input$dbInput,
-                           transcript_type = tolower(input$txTypeInput))$gene_name
-    
-    geneInput <- isolate(input$geneInput)
-    
-    if (geneInput %in% genenames & geneInput != "") {
-      gene_presel <- geneInput
-    } else {
-      gene_presel <- genenames[1]
+    flog.debug("Switching to DB %s, transcript type %s", input$dbInput, input$txTypeInput)
+    transcript_type <- tolower(input$txTypeInput)
+    genenames <- get_genes(db = input$dbInput, transcript_type = transcript_type)$gene_name
+    gene <- keep_or_first(isolate(input$geneInput), genenames)
+    updateSelectizeInput(session = session, inputId = 'geneInput',
+                         choices = genenames, selected = gene, server = TRUE)
+    selected_gene(list(db = input$dbInput, transcript_type = transcript_type, gene = gene))
+  })
+
+  observeEvent(input$geneInput, {
+    if (input$geneInput != "") {
+      selected_gene(list(db = isolate(input$dbInput),
+                         transcript_type = tolower(isolate(input$txTypeInput)),
+                         gene = input$geneInput))
     }
-    
-    updateSelectizeInput(session = session,
-                         inputId = 'geneInput',
-                         choices = genenames,
-                         selected = gene_presel,
-                         server = TRUE)
-    
-    # Transcripts list
-    tx <- get_tx(db = input$dbInput,
-                 transcript_type = tolower(isolate(input$txTypeInput)),
-                 gene_name = gene_presel)
-    
+  })
+
+  observeEvent(selected_gene(), {
+    flog.debug("Selection of Gene")
+    sel <- selected_gene()
+    tx <- get_tx(db = sel$db, transcript_type = sel$transcript_type, gene_name = sel$gene)
     tx_list <- setNames(tx$id, tx$display_value)
     session$userData$tx <- tx_list
-    txInput <- isolate(input$txInput)
-    
-    if (txInput %in% tx$id & txInput != "") {
-      tx_presel <- txInput
-    } else {
-      tx_presel <- tx_list[1]
-    }
-    
-    updateSelectizeInput(session = session,
-                         inputId = 'txInput',
-                         choices = tx_list,
-                         selected = tx_presel,
-                         server = TRUE)
-    
-    # Exons list
-    exons <- get_exons(db = input$dbInput,
-                       transcript_id = tx_presel,
+    tx_id <- keep_or_first(isolate(input$txInput), tx_list)
+    updateSelectizeInput(session = session, inputId = 'txInput',
+                         choices = tx_list, selected = tx_id, server = TRUE)
+    selected_tx(list(db = sel$db, transcript_type = sel$transcript_type, tx = as.character(tx_id)))
+  })
+
+  observeEvent(input$txInput, {
+    if (input$txInput != "") {
+      selected_tx(list(db = isolate(input$dbInput),
                        transcript_type = tolower(isolate(input$txTypeInput)),
-                       ss_type = tolower(isolate(input$ssTypeInput)))
-    
-    exons_list <- setNames(exons$id, exons$display_value)
-    session$userData$exons <- exons_list
-    exonInput <- isolate(input$exonInput)
-    
-    if (exonInput %in% exons$id & exonInput != "") {
-      ex_presel <- exonInput
-    } else {
-      ex_presel <- exons_list[1]
-    }
-    
-    updateSelectizeInput(session = session,
-                         inputId = 'exonInput',
-                         choices = exons_list,
-                         selected = ex_presel,
-                         server = TRUE)
-    
-    # Tissues list
-    output$tissuesInputUI <- renderUI({
-      if (input$dbInput == '300K-RNA (hg38)') {
-        tissues <- get_tissues()
-        tissues_list <- setNames(c(0, tissues$id), c("All", tissues$display_value))
-        session$userData$tissues <- tissues_list
-        
-        selectizeInput(label = "Tissues (* = Accessible Tissues)", 
-                       inputId = 'tissuesInput',
-                       choices = tissues_list,
-                       selected = tissues_list[1])
-        
-      } else {
-        return(NULL)
-      }
-    })
-  })
-  
-  #### Handle selection of gene ####
-  observeEvent({
-    input$geneInput
-  }, {
-    if (!input$geneInput == "") {
-      flog.debug("Selection of Gene")
-      
-      tx <- get_tx(db = isolate(input$dbInput),
-                   transcript_type = tolower(isolate(input$txTypeInput)),
-                   gene_name = isolate(input$geneInput))
-      
-      tx_list <- setNames(tx$id, tx$display_value)
-      session$userData$tx <- tx_list
-      txInput <- isolate(input$txInput)
-      
-      if (txInput %in% tx$id & txInput != "") {
-        presel <- txInput
-      } else {
-        presel <- tx_list[1]
-      }
-      
-      updateSelectizeInput(session = session,
-                           inputId = 'txInput',
-                           choices = tx_list,
-                           selected = presel,
-                           server = TRUE)
+                       tx = as.character(input$txInput)))
     }
   })
-  
-  #### Handle selection of Transcript / SS type ####
+
   observeEvent({
-    input$txInput
+    selected_tx()
     input$ssTypeInput
   }, {
-    if (!input$txInput == "") {
-      flog.debug("Selection of Exon")
-      
-      exons <- get_exons(db = isolate(input$dbInput),
-                         transcript_id = isolate(input$txInput),
-                         transcript_type = tolower(isolate(input$txTypeInput)),
-                         ss_type = tolower(isolate(input$ssTypeInput)))
-      
-      exons_list <- setNames(exons$id, exons$display_value)
-      session$userData$exons <- exons_list
-      exonInput <- isolate(input$exonInput)
-      
-      if (exonInput %in% exons$id & exonInput != "") {
-        presel <- exonInput
-      } else {
-        presel <- exons_list[1]
-      }
-      
-      updateSelectizeInput(session = session,
-                           inputId = 'exonInput',
-                           choices = exons_list,
-                           selected = presel,
-                           server = TRUE)
+    sel <- selected_tx()
+    if (is.null(sel)) return()  # the splice site type arrives before any transcript
+    flog.debug("Selection of Exon")
+    exons <- get_exons(db = sel$db, transcript_id = sel$tx,
+                       transcript_type = sel$transcript_type,
+                       ss_type = tolower(input$ssTypeInput))
+    exons_list <- setNames(exons$id, exons$display_value)
+    session$userData$exons <- exons_list
+    updateSelectizeInput(session = session, inputId = 'exonInput',
+                         choices = exons_list,
+                         selected = keep_or_first(isolate(input$exonInput), exons_list),
+                         server = TRUE)
+  })
+
+  # Tissue dropdown, for 300K-RNA only. It depends on the dataset alone, so
+  # switching transcript type keeps the selected tissue.
+  output$tissuesInputUI <- renderUI({
+    if (input$dbInput == '300K-RNA (hg38)') {
+      tissues <- get_tissues()
+      tissues_list <- setNames(c(0, tissues$id), c("All", tissues$display_value))
+      session$userData$tissues <- tissues_list
+
+      selectizeInput(label = "Tissues (* = Accessible Tissues)",
+                     inputId = 'tissuesInput',
+                     choices = tissues_list,
+                     selected = tissues_list[1])
+    } else {
+      return(NULL)
     }
   })
-  
+
   #### Sidebar settings ####
   
   # grey out # events when 'show all events' is selected

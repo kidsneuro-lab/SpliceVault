@@ -1,4 +1,4 @@
-get_genes <- function(db, transcript_type) {
+get_genes_uncached <- function(db, transcript_type) {
   switch (db,
           "40K-RNA (hg19)" = {
             qry <- glue_sql("SELECT DISTINCT gene_name FROM misspl_app.misspl_events_40k_hg19_tx
@@ -20,7 +20,7 @@ get_genes <- function(db, transcript_type) {
   return(genes)
 }
 
-get_tx <- function(db, transcript_type, gene_name) {
+get_tx_uncached <- function(db, transcript_type, gene_name) {
   switch (db,
           "40K-RNA (hg19)" = {
             tx_query <- glue_sql("SELECT tx_id || CASE WHEN canonical = 1 THEN ' (Canonical)' ELSE '' END AS display_value,
@@ -51,7 +51,7 @@ get_tx <- function(db, transcript_type, gene_name) {
   return(txs)
 }
 
-get_exons <- function(db, transcript_id, transcript_type, ss_type) {
+get_exons_uncached <- function(db, transcript_id, transcript_type, ss_type) {
   switch (db,
           "40K-RNA (hg19)" = {
             ex_query <- glue_sql("SELECT DISTINCT evnt.exon_no || ' (g.' || splice_site_pos || ')' AS display_value, exon_no AS id
@@ -84,7 +84,7 @@ get_exons <- function(db, transcript_id, transcript_type, ss_type) {
   return(ex)
 }
 
-get_tissues <- function() {
+get_tissues_uncached <- function() {
   qry <- "SELECT CASE WHEN clinically_accessible THEN CASE WHEN tissue = 'Whole Blood' THEN 'Blood - Whole' ELSE tissue END || '*'
                       ELSE tissue END AS display_value, 
                  tissue_id AS id 
@@ -93,6 +93,28 @@ get_tissues <- function() {
   flog.trace(qry)
   res <- dbGetQuery(con, qry)
   return(res)
+}
+
+# Dropdown lists, cached for the life of the app process and shared by every
+# session. They only change when the misspl_app schema is reloaded, which goes
+# with a redeploy and so a fresh process; nothing expires them before that.
+# memoise() keeps only results: a query that fails is run again next time.
+# Gene and tissue lists are few (a gene list per dataset and transcript type,
+# one tissue list); transcript and exon lists grow with the genes users pick,
+# so their cache is bounded and drops the least recently used first.
+reference_cache <- cachem::cache_mem(max_size = Inf)
+lookup_cache <- cachem::cache_mem(max_size = 50 * 1024^2)
+
+get_genes <- memoise(get_genes_uncached, cache = reference_cache)
+get_tissues <- memoise(get_tissues_uncached, cache = reference_cache)
+get_tx <- memoise(get_tx_uncached, cache = lookup_cache)
+get_exons <- memoise(get_exons_uncached, cache = lookup_cache)
+
+# Empties every dropdown cache, as a fresh process would start.
+reset_reference_caches <- function() {
+  reference_cache$reset()
+  lookup_cache$reset()
+  invisible()
 }
 
 # max_cryptic, max_skipped and limit are numbers, or NULL to leave that filter

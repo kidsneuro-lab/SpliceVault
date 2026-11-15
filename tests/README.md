@@ -216,6 +216,32 @@ differences (as `count_queries()` does) rather than reading the total.
 `tests/testthat/test-query-count.R` holds the budgets. When an optimisation
 lowers a count, lower its budget to lock the gain in.
 
+The dropdown lists are cached for the life of the app process (see
+`helpers.R`), so a count depends on what earlier interactions in the same
+process fetched. Every `with_app()` loads the app afresh with empty caches, so
+a budget asserted there is the cold-cache count; a scenario that wants
+warm-cache counts sets them up first, and `reset_reference_caches()` empties
+them mid-scenario. `with_two_users()` shares one process, as on the hosted
+server, so the second user sees what the first cached.
+
+## Time to first table
+
+`tests/benchmark/time_to_first_table.R` times how long a user waits, in
+headless Chrome with artificial latency on every query, from the page loading
+to the events table being drawn: once for the first visitor to a fresh app
+process and once for a second visitor to the same process. Run it before and
+after a change meant to make the dropdowns or the table faster, and compare
+the medians:
+
+```bash
+./run_tests.sh --benchmark
+```
+
+`SPLICEVAULT_BENCHMARK_RUNS` (default 5) and
+`SPLICEVAULT_BENCHMARK_LATENCY_MS` (default 100) change the number of runs and
+the latency. CI does not run it: timings in the emulated test container vary
+too much to assert on.
+
 ## Artificial database latency
 
 To feel the remote round-trip cost while running the app locally, set

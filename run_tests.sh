@@ -6,6 +6,7 @@
 #   ./run_tests.sh --update-snapshots    # record new and changed snapshots
 #   ./run_tests.sh --record-ensembl variant
 #                                        # re-record Ensembl REST responses
+#   ./run_tests.sh --benchmark           # time to first table (tests/benchmark)
 #
 # Needs only Docker. The database is created fresh and removed on every run.
 # A normal run fails on a missing or changed snapshot. --update-snapshots
@@ -36,7 +37,15 @@ fi
 # Recorded Ensembl REST responses, written only with --record-ensembl.
 mkdir -p tests/testthat/ensembl
 
-if [ "${1:-}" = "--record-ensembl" ]; then
+if [ "${1:-}" = "--benchmark" ]; then
+  shift
+  for var in SPLICEVAULT_BENCHMARK_RUNS SPLICEVAULT_BENCHMARK_LATENCY_MS; do
+    if [ -n "${!var:-}" ]; then run_args+=(-e "$var=${!var}"); fi
+  done
+  "${compose[@]}" build tests
+  "${compose[@]}" run "${run_args[@]}" --entrypoint Rscript tests tests/benchmark/time_to_first_table.R
+  exit
+elif [ "${1:-}" = "--record-ensembl" ]; then
   shift
   run_args+=(-e RECORD_ENSEMBL=true -e CI=true)
   run_args+=(-v "$PWD/tests/testthat/ensembl:/app/tests/testthat/ensembl")

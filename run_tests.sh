@@ -28,6 +28,11 @@ run_args=(--rm)
 mkdir -p tests/testthat/_snaps
 run_args+=(-v "$PWD/tests/testthat/_snaps:/app/tests/testthat/_snaps")
 
+# How long browser tests wait for each step (see tests/README.md).
+if [ -n "${SPLICEVAULT_BROWSER_TIMEOUT_MS:-}" ]; then
+  run_args+=(-e "SPLICEVAULT_BROWSER_TIMEOUT_MS=$SPLICEVAULT_BROWSER_TIMEOUT_MS")
+fi
+
 # Recorded Ensembl REST responses, written only with --record-ensembl.
 mkdir -p tests/testthat/ensembl
 

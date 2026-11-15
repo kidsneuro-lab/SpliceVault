@@ -120,6 +120,41 @@ dropdown selections, Restore Settings) never reach `input` on their own. The
 helpers record what the server sends and `settle()` plays the browser's part,
 applying those values until nothing changes.
 
+## Browser tests
+
+`tests/testthat/test-browser.R` runs the app in its own R process and drives
+it through headless Chrome with shinytest2. It checks what only a browser
+shows:
+
+- the events table DT draws, on both datasets, with default settings and
+  with every "Show all" box ticked
+- the Generate Table button greyed out while the dropdowns fill and after
+  clearing the gene, and clickable once they are filled
+- the Copy button and the Excel, CSV and PDF downloads, which DT builds in
+  the browser. The copied text and the CSV must have the table's headers and
+  every row (across pages), and the Excel and PDF files must not be empty.
+  Headless Chrome has no clipboard, so DT shows its "Press ctrl or ⌘ + C"
+  notice instead, and the copied text is read from there.
+
+They run with every `./run_tests.sh`; `./run_tests.sh browser` runs them
+alone. Variant mode is left to `test-variant.R`, since the app's own R
+process cannot use the recorded Ensembl responses.
+
+The scenarios use `browser_opens_app()`, `browser_selects()`,
+`browser_clears()`, `browser_changes()` and `browser_generates_table()`,
+naming fields by their labels as the other scenarios do. Checks are on the
+page itself (table rows and headers, the button's `disabled` state), not
+screenshots. The helpers are in `tests/testthat/helper-browser.R`.
+
+Chrome is a pinned Chrome for Testing build (`CHROME_VERSION` in
+`tests/Dockerfile`). The test image runs it emulated on Apple Silicon, which is
+slow, so every wait allows 60 seconds. Set
+`SPLICEVAULT_BROWSER_TIMEOUT_MS` to change that:
+
+```bash
+SPLICEVAULT_BROWSER_TIMEOUT_MS=120000 ./run_tests.sh browser
+```
+
 ## Variant mode
 
 `tests/testthat/test-variant.R` pins Variant mode: it enters an HGVS variant

@@ -51,14 +51,6 @@ jobs:
         cp google-analytics-template.html google-analytics.html
         sed -i 's/GA_MEASUREMENT_ID/${{ vars.GA_MEASUREMENT_ID }}/g' google-analytics.html
 
-    - name: Create version
-      id: create_version
-      uses: anothrNick/github-tag-action@1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DEFAULT_BUMP: patch
-        DRY_RUN: true
-      
     - name: Prepare config file
       run: |
         cp config-template.yml config.yml
@@ -67,9 +59,14 @@ jobs:
         sed -i 's/DB_USER/${{ vars.DB_USER }}/g' config.yml
         sed -i 's/DB_PASSWORD/${{ secrets.DB_PASSWORD }}/g' config.yml
 
-    - name: Update release candidate version
+    - name: Stamp the commit as the version
+      # The PR's head commit, not the merge commit pull_request checks out, so
+      # the version shown matches a commit on the branch. Manual runs use the
+      # commit they ran on.
+      env:
+        COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       run: |
-        sed -i -e "s/RELEASE/${{ steps.create_version.outputs.tag }} RC/" ui.R
+        sed -i -e "s/RELEASE/${COMMIT_SHA::7}/" ui.R
       
     - name: Deploy Shiny App
       shell: Rscript {0}

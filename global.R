@@ -13,12 +13,12 @@ if (latency > 0) {
   flog.warn("Adding %s ms of artificial latency to every database query (SPLICEVAULT_DB_LATENCY_MS)",
             latency * 1000)
 }
-con <- dbConnect(instrumented_postgres(),
-                 dbname = conn_args$dbname,
-                 host = conn_args$host,
-                 port = conn_args$port,
-                 user = conn_args$user,
-                 password = conn_args$password
-)
+# A pool (see open_db_pool() in db.R), used like a connection: queries through
+# con check out a validated connection and return it.
+con <- open_db_pool(conn_args)
+local({
+  pool <- con
+  onStop(function() close_db_pool(pool))
+})
 
 steps <- fread("help.csv")

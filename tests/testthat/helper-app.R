@@ -10,7 +10,7 @@ fixture_genes <- c("CNN2", "HBA1", "HBB", "INS", "SMN1")
 
 # Points the app at the fixture database through the `test` config profile and
 # runs it from the app directory, as shiny::runApp() would. Closes the
-# connection that global.R opens when the calling test finishes.
+# connection pool that global.R opens when the calling test finishes.
 local_test_app <- function(env = parent.frame()) {
   withr::local_envvar(
     R_CONFIG_FILE = file.path(app_dir(), "config-template.yml"),
@@ -20,7 +20,7 @@ local_test_app <- function(env = parent.frame()) {
   withr::local_dir(app_dir(), .local_envir = env)
   withr::defer({
     if (exists("con", envir = globalenv())) {
-      try(DBI::dbDisconnect(get("con", envir = globalenv())), silent = TRUE)
+      try(close_db_pool(get("con", envir = globalenv())), silent = TRUE)
       rm("con", envir = globalenv())
     }
   }, envir = env)
@@ -513,4 +513,45 @@ app_helpers <- function() {
     .helpers$env <- env
   }
   .helpers$env
+}
+
+# A connection to the fixture database of its own, outside the app's pool, as
+# a database administrator would have. Closed when the calling test finishes.
+local_admin_connection <- function(env = parent.frame()) {
+  args <- config::get("dataconnection", config = "test",
+                      file = file.path(app_dir(), "config-template.yml"))
+  admin <- DBI::dbConnect(RPostgres::Postgres(), dbname = args$dbname, host = args$host,
+                          port = args$port, user = args$user, password = args$password)
+  withr::defer(DBI::dbDisconnect(admin), envir = env)
+  admin
+}
+
+# Backends the app has open on the fixture database, found by the
+# application_name its pool sets (see open_db_pool() in db.R).
+app_backends <- function(admin) {
+  DBI::dbGetQuery(admin, "SELECT pid FROM pg_stat_activity WHERE application_name = 'splicevault'")$pid
+}
+
+# Ends the app's database connections from the server side, as when the server
+# drops a connection that sat idle while the hosted app slept. The app's side
+# of each connection still looks open.
+server_drops_app_connections <- function(admin) {
+  pids <- app_backends(admin)
+  testthat::expect_gt(length(pids), 0, label = "app backends to drop")
+  DBI::dbGetQuery(admin, glue::glue_sql("SELECT pg_terminate_backend(pid) FROM unnest(ARRAY[{pids*}]::int[]) AS pid",
+                                       .con = admin))
+  wait_for(length(app_backends(admin)) == 0, "the app's backends to end")
+}
+
+# Waits up to `timeout` seconds for `condition` to hold, failing the test if
+# it never does. The server ends backends asynchronously.
+wait_for <- function(condition, what, timeout = 5) {
+  condition <- substitute(condition)
+  env <- parent.frame()
+  deadline <- Sys.time() + timeout
+  repeat {
+    if (isTRUE(eval(condition, env))) return(invisible(TRUE))
+    if (Sys.time() > deadline) testthat::fail(paste("timed out waiting for", what))
+    Sys.sleep(0.1)
+  }
 }

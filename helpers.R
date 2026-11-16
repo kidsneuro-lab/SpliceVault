@@ -207,18 +207,13 @@ misspl_stats_query <- function(db, ss_type, exon_id, transcript_id, max_cryptic 
                                   MS.misspl_stat_id = tms4.misspl_stat_id 
                                   AND tms4.event_rank <= {events_limit}
                                   AND tms4.tissue_id = 30
-                              INNER JOIN misspl_app.ref_exons RE ON
-                                  MS.exon_id = RE.exon_id
-                                  AND RE.transcript_id = MS.transcript_id 
                               INNER JOIN misspl_app.ref_missplicing_event RME ON
                                   MS.misspl_event_id = RME.misspl_event_id
-                              INNER JOIN misspl_app.ref_tx RT ON
-                                  MS.transcript_id = RT.transcript_id
                               INNER JOIN misspl_app.ref_splice_sites rss ON
-                                  MS.ss_id = rss.ss_id 
-                                  AND rss.exon_id = RE.exon_id 
+                                  MS.ss_id = rss.ss_id
+                                  AND rss.exon_id = MS.exon_id
                               WHERE MS.transcript_id = {transcript_id}
-                                AND RE.exon_id = {exon_id}
+                                AND MS.exon_id = {exon_id}
                                 AND rss.ss_type = {ss_type} {cryp_filt}{es_filt} ORDER BY
                                   sample_count DESC {event_filt};"
               table_query <- glue_sql(qry,
@@ -244,23 +239,16 @@ misspl_stats_query <- function(db, ss_type, exon_id, transcript_id, max_cryptic 
                                   RME.acceptor_pos
                               FROM
                                   misspl_app.missplicing_stats MS
-                              INNER JOIN misspl_app.ref_exons RE ON
-                                  MS.exon_id = RE.exon_id
-                                  AND RE.transcript_id = MS.transcript_id 
                               INNER JOIN misspl_app.ref_missplicing_event RME ON
                                   MS.misspl_event_id = RME.misspl_event_id
-                              INNER JOIN misspl_app.ref_tx RT ON
-                                  MS.transcript_id = RT.transcript_id
                               INNER JOIN misspl_app.tissue_missplicing_stats TMS ON
                                   MS.misspl_stat_id = TMS.misspl_stat_id
-                              INNER JOIN misspl_app.ref_tissues RT2 ON
-                                  TMS.tissue_id = RT2.tissue_id
                               INNER JOIN misspl_app.ref_splice_sites rss ON
-                                  MS.ss_id = rss.ss_id 
-                                  AND rss.exon_id = RE.exon_id 
-                              WHERE RT2.tissue_id = {tissue_id}
+                                  MS.ss_id = rss.ss_id
+                                  AND rss.exon_id = MS.exon_id
+                              WHERE TMS.tissue_id = {tissue_id}
                                 AND MS.transcript_id = {transcript_id}
-                                AND RE.exon_id = {exon_id}
+                                AND MS.exon_id = {exon_id}
                                 AND rss.ss_type = {ss_type} {cryp_filt}{es_filt} ORDER BY
                                   TMS.tissue_sample_count DESC {event_filt};"
               table_query <- glue_sql(qry,

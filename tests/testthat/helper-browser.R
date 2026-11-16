@@ -157,6 +157,23 @@ shown_table <- function(app) {
   )
 }
 
+# The header buttons as the browser shows them, one entry per button: its
+# label, its icon's classes, what clicking it runs and whether the label fits
+# on the button (buttons do not wrap their text, so a long label overflows).
+header_buttons <- function(app) {
+  in_page(app, "$('.main-header .navbar li.dropdown > button').toArray().map(b => ({
+    label: b.textContent.trim(),
+    icon: $(b).find('i').attr('class') || '',
+    onclick: b.getAttribute('onclick') || '',
+    fits: b.scrollWidth <= b.clientWidth
+  }))")
+}
+
+# The header button with this label, or NULL when there is none.
+header_button <- function(app, label) {
+  Find(function(b) identical(b$label, label), header_buttons(app))
+}
+
 # ---------------------------------------------------------------------------
 # Exports. DT's Buttons extension builds the files in the browser, so they
 # never pass through Shiny and shinytest2's get_download() cannot see them.

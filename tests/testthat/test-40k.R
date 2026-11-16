@@ -36,8 +36,7 @@ describe("40K-RNA (hg19), RefSeq transcripts", {
     })
   })
 
-  # 40K-RNA identifies exons by number, so exon 3 stays selected (see #61).
-  it("picking another gene selects its canonical transcript, and the exon stays on exon 3 (current behaviour, see #61)", {
+  it("picking another gene selects its canonical transcript, and the exon goes back to the first exon", {
     with_app({
       # Given
       user_opens_app(session)
@@ -63,12 +62,11 @@ describe("40K-RNA (hg19), RefSeq transcripts", {
                         "8 (g.70247767)",
                         "9 (g.70248265)"
                       ),
-                      selected = "3 (g.70237215)")
+                      selected = "2 (g.70234665)")
     })
   })
 
-  # 40K-RNA identifies exons by number, so exon 3 stays selected (see #61).
-  it("picking another transcript lists its exons, and the exon stays on exon 3 (current behaviour, see #61)", {
+  it("picking another transcript lists its exons, and the exon goes back to the first exon", {
     with_app({
       # Given
       user_opens_app(session)
@@ -90,12 +88,11 @@ describe("40K-RNA (hg19), RefSeq transcripts", {
                         "6 (g.1036414)",
                         "7 (g.1037623)"
                       ),
-                      selected = "3 (g.1032390)")
+                      selected = "2 (g.1031069)")
     })
   })
 
-  # 40K-RNA identifies exons by number, so exon 3 stays selected (see #61).
-  it("switching to Ensembl keeps the gene, selects the canonical Ensembl transcript, and the exon stays on exon 3 (current behaviour, see #61)", {
+  it("switching to Ensembl keeps the gene, selects the canonical Ensembl transcript, and the exon goes back to the first exon", {
     with_app({
       # Given
       user_opens_app(session)
@@ -120,7 +117,7 @@ describe("40K-RNA (hg19), RefSeq transcripts", {
                         "6 (g.1036414)",
                         "7 (g.1037623)"
                       ),
-                      selected = "3 (g.1032390)")
+                      selected = "2 (g.1031069)")
     })
   })
 
@@ -233,8 +230,7 @@ describe("40K-RNA (hg19), Ensembl transcripts", {
     })
   })
 
-  # 40K-RNA identifies exons by number, so exon 3 stays selected (see #61).
-  it("picking another gene selects its canonical transcript, and the exon stays on exon 3 (current behaviour, see #61)", {
+  it("picking another gene selects its canonical transcript, and the exon goes back to the first exon", {
     with_app({
       # Given
       user_opens_app(session)
@@ -261,12 +257,11 @@ describe("40K-RNA (hg19), Ensembl transcripts", {
                         "8 (g.70247767)",
                         "9 (g.70248265)"
                       ),
-                      selected = "3 (g.70237215)")
+                      selected = "2 (g.70234665)")
     })
   })
 
-  # 40K-RNA identifies exons by number, so exon 3 stays selected (see #61).
-  it("picking another transcript lists its exons, and the exon stays on exon 3 (current behaviour, see #61)", {
+  it("picking another transcript lists its exons, and the exon goes back to the first exon", {
     with_app({
       # Given
       user_opens_app(session)
@@ -288,12 +283,11 @@ describe("40K-RNA (hg19), Ensembl transcripts", {
                         "5 (g.1036414)",
                         "6 (g.1037623)"
                       ),
-                      selected = "3 (g.1032390)")
+                      selected = "2 (g.1031069)")
     })
   })
 
-  # 40K-RNA identifies exons by number, so exon 3 stays selected (see #61).
-  it("switching to RefSeq keeps the gene, selects the canonical RefSeq transcript, and the exon stays on exon 3 (current behaviour, see #61)", {
+  it("switching to RefSeq keeps the gene, selects the canonical RefSeq transcript, and the exon goes back to the first exon", {
     with_app({
       # Given
       user_opens_app(session)
@@ -319,7 +313,7 @@ describe("40K-RNA (hg19), Ensembl transcripts", {
                         "6 (g.1036414)",
                         "7 (g.1037623)"
                       ),
-                      selected = "3 (g.1032390)")
+                      selected = "2 (g.1031069)")
     })
   })
 })

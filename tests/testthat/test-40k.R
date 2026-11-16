@@ -405,7 +405,7 @@ describe("40K-RNA (hg19) tissue dropdown and settings", {
     })
   })
 
-  it("Restore Settings switches back to 300K-RNA with All tissues", {
+  it("Restore Settings stays on 40K-RNA, with no tissue dropdown", {
     with_app({
       # Given
       user_opens_app(session)
@@ -416,8 +416,8 @@ describe("40K-RNA (hg19) tissue dropdown and settings", {
       user_clicks(session, "Restore Settings")
 
       # Then
-      expect_selected(session, "Dataset", "300K-RNA (hg38)")
-      expect_selected(session, "Tissue", "All")
+      expect_selected(session, "Dataset", "40K-RNA (hg19)")
+      expect_hidden(session, "Tissue")
     })
   })
 })

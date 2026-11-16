@@ -57,6 +57,26 @@ describe("40K-RNA (hg19) events table", {
       expect_snapshot(print_events_table(session))
     })
   })
+
+  it("ignores a tissue picked on 300K-RNA before switching, as 40K-RNA has no tissues", {
+    with_app({
+      # Given
+      user_opens_app(session)
+      user_selects(session, "Tab", "Gene/Transcript/Exon")
+      user_selects(session, "Tissue", "Blood - Whole*")
+      user_selects(session, "Dataset", "40K-RNA (hg19)")
+      user_selects(session, "Gene", "SMN1")
+      user_selects(session, "Exon", "6 (g.70240484)")
+
+      # When
+      user_clicks(session, "Generate Table")
+
+      # Then
+      expect_table_title(session, "Showing top  4 unannotated events in 40K-RNA (hg19) for NM_000344 (SMN1) Acceptor 6 (g.70240484) (max 2 exons skipped, cryptics within +/-600 nt)")
+      expect_first_event(session, "annotated splicing")
+      expect_equal(events_table(session)$`Total Samples`[1], "22379 (100.0%)")
+    })
+  })
 })
 
 describe("40K-RNA (hg19) events table filters", {

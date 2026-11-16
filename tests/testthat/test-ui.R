@@ -219,25 +219,30 @@ describe("Restore Settings", {
     })
   })
 
-  # Whether Restore Settings should touch these is an open question (#63).
-  it("leaves transcript type, splice site, gene and transcript as they were (current behaviour, see #63)", {
+  it("leaves the tab, variant, dataset, transcript type, splice site, gene, transcript and exon as they were", {
     with_app({
       # Given
       user_opens_app(session)
+      user_enters_variant(session, "NM_000518.5(HBB):c.316C>T")
       user_selects(session, "Tab", "Gene/Transcript/Exon")
       user_selects(session, "Transcript type", "Ensembl")
       user_selects(session, "Splice site", "Donor")
       user_selects(session, "Gene", "SMN1")
       user_selects(session, "Transcript", "ENST00000351205")
+      user_selects(session, "Exon", "3 (g.70941509)")
 
       # When
       user_clicks(session, "Restore Settings")
 
       # Then
+      expect_selected(session, "Tab", "Gene/Transcript/Exon")
+      expect_variant(session, "NM_000518.5(HBB):c.316C>T")
+      expect_selected(session, "Dataset", "300K-RNA (hg38)")
       expect_selected(session, "Transcript type", "Ensembl")
       expect_selected(session, "Splice site", "Donor")
       expect_selected(session, "Gene", "SMN1")
       expect_selected(session, "Transcript", "ENST00000351205")
+      expect_selected(session, "Exon", "3 (g.70941509)")
     })
   })
 })

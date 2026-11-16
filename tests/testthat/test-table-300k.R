@@ -93,6 +93,29 @@ describe("300K-RNA (hg38) events table, one tissue", {
       expect_snapshot(print_events_table(session))
     })
   })
+
+  # An Acceptor site, in a tissue that is not clinically accessible. Exon 6
+  # Acceptor in Artery - Tibial has the annotated event, exon skipping and
+  # cryptics: 8 events, no two with the same sample count.
+  it("at an Acceptor site with every \"Show all\" box ticked shows every event in that tissue", {
+    with_app({
+      # Given
+      user_opens_app(session)
+      user_selects(session, "Tab", "Gene/Transcript/Exon")
+      user_selects(session, "Splice site", "Acceptor")
+      user_selects(session, "Exon", "6 (g.1036415)")
+      user_selects(session, "Tissue", "Artery - Tibial")
+      user_changes(session, "Show all Events", TRUE)
+      user_changes(session, "Show all Exon Skipping", TRUE)
+      user_changes(session, "Show all Cryptics", TRUE)
+
+      # When
+      user_clicks(session, "Generate Table")
+
+      # Then
+      expect_snapshot(print_events_table(session))
+    })
+  })
 })
 
 describe("300K-RNA (hg38) events table filters", {

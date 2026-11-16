@@ -242,6 +242,19 @@ the medians:
 the latency. CI does not run it: timings in the emulated test container vary
 too much to assert on.
 
+## Event query plans
+
+`tests/benchmark/query_plans.R` captures `EXPLAIN ANALYZE` plans for the
+events table queries from the full-size database, read-only. Unlike everything
+above it runs on the host, not in Docker, and needs `.env`:
+
+```bash
+Rscript tests/benchmark/query_plans.R after-my-change
+```
+
+It writes `tests/benchmark/query_plans/<label>.md`. The latest review and its
+index recommendations are in `tests/benchmark/query_plans.md`.
+
 ## Artificial database latency
 
 To feel the remote round-trip cost while running the app locally, set

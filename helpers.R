@@ -121,6 +121,15 @@ reset_reference_caches <- function() {
 # off ("Show all"). They come from the browser, so they are converted to
 # integers and bound, never pasted into the SQL.
 get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, max_cryptic = NULL, max_skipped = NULL, limit = NULL, tissue_id = NULL, events_limit = NULL) {
+  table_query <- misspl_stats_query(db, ss_type, exon_id, transcript_id, max_cryptic, max_skipped,
+                                    limit, tissue_id, events_limit)
+  flog.trace(table_query)
+  dbGetQuery(con, table_query)
+}
+
+# The events table SQL for get_misspl_stats(), also used by
+# tests/benchmark/query_plans.R to review its query plans.
+misspl_stats_query <- function(db, ss_type, exon_id, transcript_id, max_cryptic = NULL, max_skipped = NULL, limit = NULL, tissue_id = NULL, events_limit = NULL) {
   cryp_filt <- if (is.null(max_cryptic)) SQL("") else
     glue_sql(" AND (ABS(cryptic_distance) <= {max_cryptic} OR cryptic_distance IS NULL)",
              max_cryptic = as.integer(max_cryptic), .con = con)
@@ -265,10 +274,7 @@ get_misspl_stats <- function(db, ss_type, exon_id, transcript_id, max_cryptic = 
                                      .con = con)
             }
           })
-
-  flog.trace(table_query)
-  set_table <- dbGetQuery(con, table_query)
-  return(set_table)
+  table_query
 }
 
 get_variant_data_restapi <- function(mode, variant, splicesite = NULL){

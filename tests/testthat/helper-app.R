@@ -419,6 +419,11 @@ expect_selected <- function(session, field, selected) {
                          label = paste(field, "selection"))
 }
 
+# Checks the text in the Variant box.
+expect_variant <- function(session, variant) {
+  testthat::expect_equal(shiny::isolate(session$input$variant), variant, label = "Variant box")
+}
+
 # Checks that a dropdown is not shown at all.
 expect_hidden <- function(session, field) {
   testthat::expect_null(dropdown_options(session, field), label = paste(field, "dropdown"))

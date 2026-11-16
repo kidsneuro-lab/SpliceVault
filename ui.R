@@ -80,7 +80,9 @@ dashboardHeader(
           column(6, align="center", offset = 3,
                  bsButton(inputId = "restore", 
                           label = "Restore Settings", 
-                          style = "basic")
+                          style = "basic"),
+                 bsTooltip("restore", "Resets the sidebar filters and tissue",
+                           placement = "top", trigger = "hover")
           )
         ),
         br(),

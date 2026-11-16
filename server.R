@@ -105,6 +105,13 @@ server <- function(input, output, session) {
     }
   })
 
+  # The selected tissue, 0 for all tissues. 40K-RNA has no tissues, but the
+  # browser keeps the last value of a dropdown it no longer shows, so a tissue
+  # picked on 300K-RNA would otherwise still apply after switching to 40K-RNA.
+  tissue_id <- reactive({
+    if (input$dbInput == '300K-RNA (hg38)' && !is.null(input$tissuesInput)) input$tissuesInput else 0
+  })
+
   #### Sidebar settings ####
   
   # grey out # events when 'show all events' is selected
@@ -136,7 +143,10 @@ server <- function(input, output, session) {
     hide("tab")
   })
   
-  # restore to defaults button
+  # Restore Settings: the sidebar settings and the tissue go back to their
+  # defaults. The dataset, transcript type, splice site and the gene,
+  # transcript and exon are main-form selections and stay as they are (#63).
+  # On 40K-RNA there is no tissue dropdown, so the tissue update does nothing.
   observeEvent(input$restore, {
     updateSliderInput(session, "eventsNoInput", value = 4)
     updateSliderInput(session, "esInput", value = 2)
@@ -150,9 +160,6 @@ server <- function(input, output, session) {
     updateCheckboxInput(session = session,
                         inputId = "allcryptics",
                         value = FALSE)
-    updateSelectizeInput(session = session,
-                         inputId = 'dbInput',
-                         selected = '300K-RNA (hg38)')
     updateSelectizeInput(session = session,
                          inputId = 'tissuesInput',
                          selected = 0)
@@ -194,8 +201,8 @@ server <- function(input, output, session) {
       mod_exonInput <- input$exonInput
     }
     
-    tissue <- if (input$tissuesInput == 0) NULL else
-      names(session$userData$tissues)[session$userData$tissues == input$tissuesInput]
+    tissue <- if (tissue_id() == 0) NULL else
+      names(session$userData$tissues)[session$userData$tissues == tissue_id()]
     title <- events_table_title(db = input$dbInput,
                                 transcript = mod_txName,
                                 gene = mod_geneInput,
@@ -207,7 +214,7 @@ server <- function(input, output, session) {
                                 tissue = tissue)
 
     list(title = title,
-         legend = input$dbInput == '300K-RNA (hg38)' & input$tissuesInput == 0,
+         legend = input$dbInput == '300K-RNA (hg38)' & tissue_id() == 0,
          transcript_id = mod_txInput,
          exon_id = mod_exonInput,
          ss_type = tolower(mod_ssTypeInput))
@@ -226,7 +233,7 @@ server <- function(input, output, session) {
   table_ms <- eventReactive(request(), {
     req(is.null(request()$error))
     
-    columns <- events_table_columns(input$dbInput, tissue_selected = input$tissuesInput != 0)
+    columns <- events_table_columns(input$dbInput, tissue_selected = tissue_id() != 0)
     # NULL leaves a filter off ("Show all").
     max_cryptic <- if (input$allcryptics == FALSE) input$cssInput else NULL
     max_skipped <- if (input$allskips == FALSE) input$esInput else NULL
@@ -239,7 +246,7 @@ server <- function(input, output, session) {
                                   max_cryptic = max_cryptic,
                                   max_skipped = max_skipped,
                                   limit = limit,
-                                  tissue_id = input$tissuesInput,
+                                  tissue_id = tissue_id(),
                                   events_limit = input$eventsNoInput + 1)
     
     set_table <- format_events(set_table, columns$genome)

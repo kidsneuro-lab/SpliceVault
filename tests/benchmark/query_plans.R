@@ -33,8 +33,8 @@ con <- dbConnect(RPostgres::Postgres(),
                  dbname = Sys.getenv("DB_NAME"), host = Sys.getenv("DB_HOST"), port = 5432,
                  user = Sys.getenv("DB_USER"), password = Sys.getenv("DB_PASSWORD"))
 on.exit(dbDisconnect(con), add = TRUE)
-dbExecute(con, "SET default_transaction_read_only = on")
-dbExecute(con, "SET statement_timeout = '120s'")
+invisible(dbExecute(con, "SET default_transaction_read_only = on"))
+invisible(dbExecute(con, "SET statement_timeout = '120s'"))
 source("helpers.R")
 
 runs <- 3

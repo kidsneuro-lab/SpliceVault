@@ -120,3 +120,26 @@ describe("40K-RNA (hg19) events table in the browser", {
     expect_exports_work(app)
   })
 })
+
+describe("Header in the browser", {
+  it("has an Understanding SpliceVault button with a film icon that opens the video guide in a new tab, its label fitting on the button", {
+    # Given / When
+    app <- local_browser_app()
+
+    # Then
+    button <- header_button(app, "Understanding SpliceVault")
+    expect_false(is.null(button))
+    expect_match(button$icon, "fa-film", fixed = TRUE)
+    expect_equal(button$onclick, "window.open('https://www.youtube.com/watch?v=xfksZH3jPwM', '_blank')")
+    expect_true(button$fits)
+  })
+
+  it("no longer has the SpliceVault Version 2.0 button", {
+    # Given / When
+    app <- local_browser_app()
+
+    # Then
+    labels <- vapply(header_buttons(app), `[[`, "", "label")
+    expect_setequal(labels, c("Understanding SpliceVault", "Report an issue"))
+  })
+})

@@ -62,23 +62,31 @@ server <- function(input, output, session) {
     }
   })
 
-  observeEvent({
-    selected_tx()
-    input$ssTypeInput
-  }, {
-    sel <- selected_tx()
-    if (is.null(sel)) return()  # the splice site type arrives before any transcript
+  # A new transcript (from a dataset, transcript type, gene or transcript
+  # change) selects the first exon, so the user re-evaluates which exon to
+  # interrogate (#61). Switching Acceptor/Donor keeps the exon when it has that
+  # splice site.
+  update_exons <- function(sel, keep_exon) {
     flog.debug("Selection of Exon")
     exons <- get_exons(db = sel$db, transcript_id = sel$tx,
                        transcript_type = sel$transcript_type,
-                       ss_type = tolower(input$ssTypeInput))
+                       ss_type = tolower(isolate(input$ssTypeInput)))
     exons_list <- setNames(exons$id, exons$display_value)
     session$userData$exons <- exons_list
+    selected <- if (keep_exon) keep_or_first(isolate(input$exonInput), exons_list) else exons_list[1]
     updateSelectizeInput(session = session, inputId = 'exonInput',
-                         choices = exons_list,
-                         selected = keep_or_first(isolate(input$exonInput), exons_list),
-                         server = TRUE)
+                         choices = exons_list, selected = selected, server = TRUE)
+  }
+
+  observeEvent(selected_tx(), {
+    update_exons(selected_tx(), keep_exon = FALSE)
   })
+
+  observeEvent(input$ssTypeInput, {
+    sel <- isolate(selected_tx())
+    if (is.null(sel)) return()  # the splice site type arrives before any transcript
+    update_exons(sel, keep_exon = TRUE)
+  }, ignoreInit = TRUE)
 
   # Tissue dropdown, for 300K-RNA only. It depends on the dataset alone, so
   # switching transcript type keeps the selected tissue.
